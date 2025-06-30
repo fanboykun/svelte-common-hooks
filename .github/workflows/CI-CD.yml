@@ -13,20 +13,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
         with:
-          node-version: '20'
-          cache: 'npm'
+          deno-version: 'lts'
 
       - name: Install dependencies
-        run: npm install
+        run: deno install
 
       - name: Svelte Check
-        run: npm run check
+        run: deno run check
 
       - name: Lint
-        run: npm run lint
+        run: deno run lint
 
   # Publish:
   #   runs-on: ubuntu-latest
@@ -36,16 +35,15 @@ jobs:
   #   needs: CI
   #   steps:
   #     - uses: actions/checkout@v4
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v4
+  #     - name: Setup Deno
+  #       uses: denoland/setup-deno@v2
   #       with:
-  #         node-version: '20'
-  #         cache: 'npm'
+  #         deno-version: 'lts'
   #     - name: Install dependencies
-  #       run: npm install
+  #       run: deno install
 
   #     - name: Build
-  #       run: npm run build
+  #       run: deno run build
 
   #     - name: Publish to jsr
-  #       run: npx jsr publish
+  #       run: deno run publish
