@@ -3,6 +3,11 @@
 	"repository": {
 		"url": "https://github.com/fanboykun/svelte-common-hooks.git"
 	},
+	"licenses": [
+		{
+			"url": "https://github.com/fanboykun/svelte-common-hooks/blob/main/LICENSE.md"
+		}
+	],
 	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
@@ -13,7 +18,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check src/lib/* && eslint src/lib/*"
 	},
 	"files": [
 		"dist",
@@ -23,26 +28,24 @@
 	"sideEffects": [
 		"**/*.css"
 	],
-	"svelte": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"svelte": "./dist/index.svelte.js",
+	"types": "./dist/index.svelte.d.ts",
 	"type": "module",
 	"exports": {
 		".": {
-			"types": "./dist/index.d.ts",
-			"svelte": "./dist/index.js"
+			"types": "./dist/index.svelte.d.ts",
+			"svelte": "./dist/index.svelte.js"
 		}
 	},
 	"peerDependencies": {
-		"svelte": "^5.0.0"
-	},
-	"dependencies": {
+		"svelte": "^5.0.0",
+		"@sveltejs/kit": "^2.16.0",
 		"zod": "^3.25.67"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@sveltejs/adapter-auto": "^6.0.0",
-		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/package": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"eslint": "^9.18.0",

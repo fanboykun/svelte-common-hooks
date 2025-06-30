@@ -18,8 +18,7 @@
     "npm:svelte@5": "5.34.9_acorn@8.15.0",
     "npm:typescript-eslint@^8.20.0": "8.35.0_eslint@9.30.0_typescript@5.8.3_@typescript-eslint+parser@8.35.0__eslint@9.30.0__typescript@5.8.3",
     "npm:typescript@5": "5.8.3",
-    "npm:vite@^6.2.6": "6.3.5_picomatch@4.0.2",
-    "npm:zod@^3.25.67": "3.25.67"
+    "npm:vite@^6.2.6": "6.3.5_picomatch@4.0.2"
   },
   "npm": {
     "@ampproject/remapping@2.3.0": {
@@ -1429,9 +1428,6 @@
     },
     "zimmerframe@1.1.2": {
       "integrity": "sha512-rAbqEGa8ovJy4pyBxZM70hg4pE6gDgaQ0Sl9M3enG3I0d6H4XSAM3GeNGLKnsBpuijUow064sf7ww1nutC5/3w=="
-    },
-    "zod@3.25.67": {
-      "integrity": "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="
     }
   },
   "workspace": {
@@ -1440,7 +1436,6 @@
         "npm:@eslint/compat@^1.2.5",
         "npm:@eslint/js@^9.18.0",
         "npm:@sveltejs/adapter-auto@6",
-        "npm:@sveltejs/kit@^2.16.0",
         "npm:@sveltejs/package@2",
         "npm:@sveltejs/vite-plugin-svelte@5",
         "npm:eslint-config-prettier@^10.0.1",
@@ -1454,8 +1449,7 @@
         "npm:svelte@5",
         "npm:typescript-eslint@^8.20.0",
         "npm:typescript@5",
-        "npm:vite@^6.2.6",
-        "npm:zod@^3.25.67"
+        "npm:vite@^6.2.6"
       ]
     }
   }
