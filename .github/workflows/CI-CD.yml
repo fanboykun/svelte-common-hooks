@@ -13,19 +13,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: '2.3.5'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: deno install
+        run: bun install
 
       - name: Svelte Check
-        run: deno run check
+        run: bun run check
 
       - name: Lint
-        run: deno run lint
+        run: bun run lint
 
   # Publish:
   #   runs-on: ubuntu-latest
@@ -35,15 +33,14 @@ jobs:
   #   needs: CI
   #   steps:
   #     - uses: actions/checkout@v4
-  #     - name: Setup Deno
-  #       uses: denoland/setup-deno@v2
-  #       with:
-  #         deno-version: 'lts'
+  #     - name: Setup Bun
+  #       uses: oven-sh/setup-bun@v2
+
   #     - name: Install dependencies
-  #       run: deno install
+  #       run: bun install
 
   #     - name: Build
-  #       run: deno run build
+  #       run: bun run build
 
   #     - name: Publish to jsr
-  #       run: deno run publish
+  #       run: bun x jsr publish
