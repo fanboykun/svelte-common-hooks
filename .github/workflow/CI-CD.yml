@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['*']
+  workflow_dispatch:
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Svelte Check
+        run: npm run check
+
+      - name: Lint
+        run: npm run lint
+
+  # Publish:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write # The OIDC ID token is used for authentication with JSR.
+  #   needs: CI
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #     - name: Install dependencies
+  #       run: npm install
+
+  #     - name: Build
+  #       run: npm run build
+
+  #     - name: Publish to jsr
+  #       run: npx jsr publish
