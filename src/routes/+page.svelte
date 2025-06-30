@@ -1,7 +1,18 @@
 <script lang="ts">
-	import { createModalState, createFormState, createDataTable } from '$lib/index.svelte';
 </script>
 
-<h1>Welcome to your library project</h1>
-<p>Create your package using @sveltejs/package and preview/showcase your work with SvelteKit</p>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<svelte:head>
+	<title>svelte-common-hooks</title>
+</svelte:head>
+
+<h1>svelte-common-hooks</h1>
+<p>Collection of common hooks for svelte</p>
+<p>
+	Visit <a href="https://github.com/fanboykun/svelte-common-hooks">github</a> to read the documentation
+</p>
+<h3>Examples</h3>
+<ul>
+	<li><a href="/create-modal-state">create-modal-state</a></li>
+	<li><a href="/create-form-state">create-form-state</a></li>
+	<li><a href="/create-data-table">create-data-table</a></li>
+</ul>

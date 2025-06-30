@@ -43,6 +43,23 @@ export type Config<
 			? ManualConfig<T>
 			: never);
 
+/**
+ * Creates a DataTable instance.
+ *
+ * @example
+ * ```svelte
+ * <script lang="ts">
+ * 	import { createDataTable } from 'svelte-common-hooks';
+ * 	const dataTable = createDataTable({
+ * 		mode: 'client',
+ * 		perPage: 10,
+ * 		initial: [],
+ * 		filters: {},
+ * 		sorts: {},
+ * 	});
+ * </script>
+ * ```
+ */
 export function createDataTable<
 	T extends Record<string, any>,
 	F extends Filter<T>,

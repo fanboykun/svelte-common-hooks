@@ -1,5 +1,8 @@
 {
 	"name": "svelte-common-hooks",
+	"repository": {
+		"url": "https://github.com/fanboykun/svelte-common-hooks.git"
+	},
 	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
@@ -56,6 +59,14 @@
 		"vite": "^6.2.6"
 	},
 	"keywords": [
-		"svelte"
+		"svelte",
+		"sveltekit",
+		"svelte-common-hooks",
+		"svelte-hooks",
+		"svelte-data-table",
+		"data-table-svelte",
+		"svelte-dialog",
+		"svelte-form-state",
+		"use-form-svelte"
 	]
 }
