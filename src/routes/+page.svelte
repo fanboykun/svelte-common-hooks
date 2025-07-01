@@ -1,10 +1,3 @@
-<script lang="ts">
-</script>
-
-<svelte:head>
-	<title>svelte-common-hooks</title>
-</svelte:head>
-
 <h1>svelte-common-hooks</h1>
 <p>Collection of common hooks for svelte</p>
 <p>
