@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export type Filter<T, M extends Mode> = Record<
 	string,
 	M extends 'client' ? (item: T, args: any) => boolean : unknown
@@ -18,11 +16,13 @@ type AppliableFilter<M extends Mode, F extends Filter<any, M>> = {
 
 export type Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
 
-export type Query<T> = (param: QueryParam) => Promise<QueryResult<T>>;
+export type Query<T> = (param: QueryParam) => Promise<QueryResult<T> | void>;
 type QueryResult<T> = { result: T[]; totalItems: number };
 type QueryParam = {
 	search: string;
 	page: number;
+	// filter: AppliableFilter<Mode, Filter<any, Mode>>;
+	filter: Record<string, any>;
 };
 
 export type Mode = 'server' | 'client' | 'manual';
@@ -114,15 +114,27 @@ export type Config<T, M extends Mode, F extends Filter<T, M>, S extends Sorting<
  * Creates a DataTable instance.
  *
  * @example
+ * the code below shows the example of client `Mode`
  * ```svelte
  * <script lang="ts">
  * 	import { createDataTable } from 'svelte-common-hooks';
+ * 	let { data } = $props();
  * 	const dataTable = createDataTable({
+ * 		// depending of the mode, the config might be different, see `Config`
  * 		mode: 'client',
- * 		perPage: 10,
- * 		initial: [],
- * 		filters: {},
- * 		sorts: {},
+ * 		initial: data.users,
+ * 		searchWith(item, query) {
+ * 			return item.name.toLowerCase().includes(query.toLowerCase());
+ * 		},
+ * 		filters: {
+ * 			isAdult: (item, args: boolean) => item.age >= 18 === args,
+ * 			age: (item, args: number) => item.age === args
+ * 		},
+ * 		sorts: {
+ * 			age: (a, b, dir) => (dir === 'asc' ? a.age - b.age : b.age - a.age),
+ * 			name: (a, b, dir) =>
+ * 				dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+ * 		}
  * 	});
  * </script>
  * ```
@@ -277,11 +289,17 @@ export class DataTable<
 		 */
 		$effect(() => {
 			if (config.mode === 'server' && this.queryFn) {
-				this.queryFn({ page: this.#currentPage, search: this.#search }).then((result) => {
-					this.#data = {
-						length: result.totalItems,
-						value: result.result
-					};
+				this.queryFn({
+					page: this.#currentPage,
+					search: this.#search,
+					filter: this.#appliableFilter
+				})?.then?.((result) => {
+					if (result && 'result' in result && 'totalItems' in result) {
+						this.#data = {
+							length: result.totalItems,
+							value: result.result
+						};
+					}
 				});
 			}
 		});
@@ -396,6 +414,28 @@ export class DataTable<
 	 * only for client mode
 	 * @param getters the state getters
 	 * @returns this
+	 * @example
+	 * ```svelte
+	 * <script lang="ts">
+	 * 	const dataTable = createDataTable({
+	 * 		mode: 'client',
+	 * 		initial: [],
+	 * 		searchWith(item, query) {
+	 * 			return item.name.toLowerCase().includes(query.toLowerCase());
+	 * 		},
+	 * 		filters: {
+	 * 			isAdult: (item, args: boolean) => item.age >= 18 === args,
+	 * 			age: (item, args: number) => item.age === args
+	 * 		},
+	 * 		sorts: {
+	 * 			age: (a, b, dir) => (dir === 'asc' ? a.age - b.age : b.age - a.age),
+	 * 			name: (a, b, dir) =>
+	 * 				dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+	 * 		}
+	 * 	}).hydrate(() => data.users);
+	 *
+	 * </script>
+	 * ```
 	 */
 	public hydrate(getters: () => T[]) {
 		if (this.config.mode !== 'client') return this;
