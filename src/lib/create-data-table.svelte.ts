@@ -2,15 +2,19 @@
 
 type FilterFunction<T, A> = (item: T, args: A) => boolean;
 type FilterArg<F> = F extends FilterFunction<any, infer A> ? A : never;
-
 type Filter<T> = Record<string, (item: T, args: any) => boolean>;
+
 type Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
+
 type Query<T> = (param: QueryParam) => Promise<QueryResult<T>>;
 type QueryResult<T> = { result: T[]; totalItems: number };
 type QueryParam = {
 	search: string;
 	page: number;
 };
+
+type Mode = 'server' | 'client' | 'manual';
+
 /**
  * The client side configuration
  */
@@ -57,20 +61,15 @@ type ManualConfig<T> = {
 /**
  * The configuration for initiating the DataTable
  * @template T The type of the data
+ * @template M The mode of the DataTable
  * @template F The type of the filter
  * @template S The type of the sorting
- * @template Mode The mode of the DataTable
  */
-export type Config<
-	T,
-	F extends Filter<T>,
-	S extends Sorting<T>,
-	Mode extends 'client' | 'server' | 'manual'
-> = {
+export type Config<T, M, F extends Filter<T>, S extends Sorting<T>> = {
 	/**
 	 * The mode of the DataTable
 	 */
-	mode: Mode;
+	mode: M;
 	/**
 	 * The number of items per page
 	 */
@@ -91,11 +90,11 @@ export type Config<
 	 * The list of your sorting
 	 */
 	sorts?: S;
-} & (Mode extends 'client'
+} & (M extends 'client'
 	? ClientConfig<T>
-	: Mode extends 'server'
+	: M extends 'server'
 		? ServerConfig<T>
-		: Mode extends 'manual'
+		: M extends 'manual'
 			? ManualConfig<T>
 			: never);
 
@@ -118,22 +117,18 @@ export type Config<
  */
 export function createDataTable<
 	T extends Record<string, any>,
+	M extends Mode,
 	F extends Filter<T>,
-	S extends Sorting<T>,
-	Mode extends 'client' | 'server' | 'manual',
-	FilterKeys extends keyof F = keyof F,
-	SortingKeys extends keyof S = keyof S
->(config: Config<T, F, S, Mode>) {
-	return new DataTable<T, F, S, Mode, FilterKeys, SortingKeys>(config);
+	S extends Sorting<T>
+>(config: Config<T, M, F, S>) {
+	return new DataTable<T, M, F, S>(config);
 }
 
 export class DataTable<
 	T extends Record<string, any>,
+	M extends Mode,
 	F extends Filter<T>,
-	S extends Sorting<T>,
-	Mode extends 'client' | 'server' | 'manual',
-	FilterKeys extends keyof F = keyof F,
-	SortingKeys extends keyof S = keyof S
+	S extends Sorting<T>
 > {
 	/**
 	 * we do this to avoid reprocessing the initial data
@@ -149,7 +144,7 @@ export class DataTable<
 	/**
 	 * Keep the config as a class property for use later
 	 */
-	private config: Config<T, F, S, Mode>;
+	private config: Config<T, M, F, S>;
 	/**
 	 * Only available on server mode
 	 * This is where the data is fetched from the server
@@ -196,9 +191,9 @@ export class DataTable<
 	/**
 	 * The sorting that is currently applied, we keep track of the sorting to apply it to the data
 	 */
-	#appliableSort = $state<{ current: SortingKeys; dir: 'asc' | 'desc' }>(
+	#appliableSort = $state<{ current: keyof S; dir: 'asc' | 'desc' }>(
 		{} as {
-			current: SortingKeys;
+			current: keyof S;
 			dir: 'asc' | 'desc';
 		}
 	);
@@ -243,7 +238,7 @@ export class DataTable<
 	 */
 	#search = $state<string>('');
 
-	constructor(config: Config<T, F, S, Mode>) {
+	constructor(config: Config<T, M, F, S>) {
 		if (config.mode === 'server' && 'queryFn' in config && config.queryFn) {
 			this.queryFn = config.queryFn;
 		} else if (
@@ -413,7 +408,7 @@ export class DataTable<
 	/**
 	 * Filter the data by the given defined filter from `config`
 	 */
-	public readonly filterBy = <K extends FilterKeys>(
+	public readonly filterBy = <K extends keyof F>(
 		key: K,
 		args: Parameters<F[K]>[1],
 		immediate = false
@@ -427,7 +422,7 @@ export class DataTable<
 	 * Remove a filter from `pendingFilter`
 	 * set `immediate` to true if you want to remove the filter from `appliableFilter` as well
 	 */
-	public readonly removeFilter = <K extends FilterKeys>(key: K, immediate = false) => {
+	public readonly removeFilter = <K extends keyof F>(key: K, immediate = false) => {
 		delete this.#pendingFilter[key];
 		if (immediate) delete this.#appliableFilter[key];
 		this.processUpdate();
@@ -467,7 +462,7 @@ export class DataTable<
 			[K in keyof F]: FilterArg<F[K]>;
 		};
 		this.#appliableSort = {} as {
-			current: SortingKeys;
+			current: keyof S;
 			dir: 'asc' | 'desc';
 		};
 		this.#currentPage = 1;
@@ -479,7 +474,7 @@ export class DataTable<
 	/**
 	 * Sort the data by the given defined sort from `config`
 	 */
-	public readonly sortBy = (col: SortingKeys, dir?: 'asc' | 'desc') => {
+	public readonly sortBy = (col: keyof S, dir?: 'asc' | 'desc') => {
 		const isTheSameColumn = this.#appliableSort.current === col;
 		this.#appliableSort = {
 			current: col,
@@ -493,7 +488,7 @@ export class DataTable<
 	 */
 	public readonly removeSort = () => {
 		this.#appliableSort = {
-			current: '' as SortingKeys,
+			current: '' as keyof S,
 			dir: 'desc'
 		};
 		this.processUpdate();
@@ -589,8 +584,8 @@ export class DataTable<
 	 */
 	get sortKeys() {
 		return this.config.sorts
-			? (Object.keys(this.config.sorts) as SortingKeys[])
-			: ([] as SortingKeys[]);
+			? (Object.keys(this.config.sorts) as (keyof S)[])
+			: ([] as (keyof S)[]);
 	}
 	/**
 	 * @readonly pendingFilter
