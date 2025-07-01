@@ -17,7 +17,9 @@
 			isAdult: (item, args: boolean) => item.age >= 18 === args
 		},
 		sorts: {
-			age: (a, b, dir) => (dir === 'asc' ? a.age - b.age : b.age - a.age)
+			age: (a, b, dir) => (dir === 'asc' ? a.age - b.age : b.age - a.age),
+			name: (a, b, dir) =>
+				dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
 		}
 	});
 </script>
