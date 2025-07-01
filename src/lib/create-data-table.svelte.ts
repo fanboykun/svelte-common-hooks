@@ -642,4 +642,11 @@ export class DataTable<
 	set search(value: string) {
 		this.#search = value;
 	}
+	/**
+	 * @readonly mode
+	 * get the mode of the DataTable
+	 */
+	get mode() {
+		return this.config.mode;
+	}
 }
