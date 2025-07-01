@@ -11,29 +11,85 @@ type QueryParam = {
 	search: string;
 	page: number;
 };
+/**
+ * The client side configuration
+ */
 type ClientConfig<T> = {
+	/**
+	 * The initial data
+	 */
 	initial: T[];
+	/**
+	 * The search function
+	 */
 	searchWith?: (item: T, query: string) => boolean;
 };
+/**
+ * The server side configuration
+ */
 type ServerConfig<T> = {
+	/**
+	 * The query function, this is where the data is fetched from the server
+	 */
 	queryFn: Query<T>;
+	/**
+	 * The total number of items if your mode is server or manual
+	 */
+	totalItems: number;
 };
+/**
+ * The manual configuration
+ */
 type ManualConfig<T> = {
+	/**
+	 * The initial data
+	 */
 	initial: T[];
-	processWith?: () => Promise<void>;
+	/**
+	 * The process function, this is where the data is fetched and processed by yourself
+	 */
+	processWith: () => Promise<void>;
+	/**
+	 * The total number of items if your mode is server or manual
+	 */
+	totalItems: number;
 };
+/**
+ * The configuration for initiating the DataTable
+ * @template T The type of the data
+ * @template F The type of the filter
+ * @template S The type of the sorting
+ * @template Mode The mode of the DataTable
+ */
 export type Config<
 	T,
 	F extends Filter<T>,
 	S extends Sorting<T>,
 	Mode extends 'client' | 'server' | 'manual'
 > = {
+	/**
+	 * The mode of the DataTable
+	 */
 	mode: Mode;
-	perPage: number;
+	/**
+	 * The number of items per page
+	 */
+	perPage?: number;
+	/**
+	 * The current page
+	 */
 	page?: number;
+	/**
+	 * The search query
+	 */
 	search?: string;
-	totalItems?: number;
+	/**
+	 * The list of your filters
+	 */
 	filters?: F;
+	/**
+	 * The list of your sorting
+	 */
 	sorts?: S;
 } & (Mode extends 'client'
 	? ClientConfig<T>
@@ -86,11 +142,23 @@ export class DataTable<
 	 */
 	private hydrated = false;
 
-	// private initial: T[] = [];
+	/**
+	 * We keep track of the initial as a state
+	 */
 	private initial = $state<T[]>([]);
+	/**
+	 * Keep the config as a class property for use later
+	 */
 	private config: Config<T, F, S, Mode>;
+	/**
+	 * Only available on server mode
+	 * This is where the data is fetched from the server
+	 */
 	private queryFn?: Query<T>;
 
+	/**
+	 * The processed data
+	 */
 	#data = $derived.by(() => {
 		const processed = $state(this.process(this.initial));
 		return {
@@ -109,32 +177,70 @@ export class DataTable<
 		};
 	});
 
+	/**
+	 * The filter that is currently applied, we keep track of the filter to apply it to the data
+	 */
 	#appliableFilter = $state<{ [K in keyof F]: FilterArg<F[K]> }>(
 		{} as {
 			[K in keyof F]: FilterArg<F[K]>;
 		}
 	);
+	/**
+	 * The filter that is currently pending to be applied
+	 */
 	#pendingFilter = $state(
 		{} as {
 			[K in keyof F]: FilterArg<F[K]>;
 		}
 	);
+	/**
+	 * The sorting that is currently applied, we keep track of the sorting to apply it to the data
+	 */
 	#appliableSort = $state<{ current: SortingKeys; dir: 'asc' | 'desc' }>(
 		{} as {
 			current: SortingKeys;
 			dir: 'asc' | 'desc';
 		}
 	);
+	/**
+	 * The number of items per page
+	 */
 	#perPage = $state(10);
+	/**
+	 * The current page
+	 */
 	#currentPage = $state(1);
+	/**
+	 * The total number of items
+	 */
 	#totalItems = $derived(this.#data.length);
+	/**
+	 * The total number of pages
+	 */
 	#totalPage = $derived(Math.ceil(this.#totalItems / this.#perPage));
+	/**
+	 * The list of pages
+	 */
 	#pageList = $derived(Array.from({ length: this.#totalPage }, (_, i) => i + 1));
+	/**
+	 * Whether we can go to the next page
+	 */
 	#canGoNext = $derived(this.#currentPage < this.#totalPage && this.#totalItems > 0);
+	/**
+	 * Whether we can go to the previous page
+	 */
 	#canGoPrevious = $derived(this.#currentPage > 1 && this.#totalItems > 0);
+	/**
+	 * The number of items showing from
+	 */
 	#showingFrom = $derived((this.#currentPage - 1) * this.#perPage + 1);
+	/**
+	 * The number of items showing to
+	 */
 	#showingTo = $derived(Math.min(this.#currentPage * this.#perPage, this.#totalItems));
-
+	/**
+	 * The search query
+	 */
 	#search = $state<string>('');
 
 	constructor(config: Config<T, F, S, Mode>) {
@@ -154,17 +260,24 @@ export class DataTable<
 			this.config.initial = [];
 		}
 
-		this.#perPage = config.perPage;
-		this.#totalItems = config.totalItems ?? this.initial.length;
+		this.#perPage = config.perPage ?? 10;
+		this.#totalItems =
+			config.mode === 'client'
+				? this.initial.length
+				: 'totalItems' in config && config.totalItems
+					? config.totalItems
+					: this.initial.length;
 		this.#search = config.search ?? '';
 		this.#currentPage = config.page ?? 1;
 
 		$effect(() => {
 			if (this.config.mode === 'client' && this.#search) this.#currentPage = 1;
 		});
-
+		/**
+		 * As soon as the component is mounted, we fetch the data from the server if the mode is server
+		 */
 		$effect(() => {
-			if (this.queryFn) {
+			if (config.mode === 'server' && this.queryFn) {
 				this.queryFn({ page: this.#currentPage, search: this.#search }).then((result) => {
 					this.#data = {
 						length: result.totalItems,
@@ -174,6 +287,9 @@ export class DataTable<
 			}
 		});
 	}
+	/**
+	 * Whether any filter is applied
+	 */
 	public readonly isFilterApplied = $derived.by(() => {
 		if (this.#search) return true;
 		if (this.#appliableSort.current) return true;
@@ -182,6 +298,9 @@ export class DataTable<
 	});
 
 	private timeout: number | null = null;
+	/**
+	 * Set the search query, and delay the process update
+	 */
 	public readonly setSearch = (value: string, delay = 0) => {
 		if (this.timeout) clearTimeout(this.timeout);
 		this.timeout = setTimeout(() => {
@@ -191,6 +310,9 @@ export class DataTable<
 		}, delay);
 	};
 
+	/**
+	 * Client side data processing
+	 */
 	private process(value: T[]) {
 		if (this.config.mode !== 'client') return { result: value, totalItems: value.length };
 		const result = value?.length
@@ -224,29 +346,44 @@ export class DataTable<
 		};
 	}
 
+	/**
+	 * Manual mode processing
+	 */
 	private readonly processUpdate = async () => {
 		if (this.config.mode === 'manual' && 'processWith' in this.config && this.config.processWith)
 			this.config.processWith();
 	};
 
+	/**
+	 * Go to the next page
+	 */
 	public readonly nextPage = () => {
 		if (!this.#canGoNext) return;
 		this.#currentPage = this.#currentPage + 1;
 		this.processUpdate();
 	};
 
+	/**
+	 * Go to the previous page
+	 */
 	public readonly previousPage = () => {
 		if (!this.#canGoPrevious) return;
 		this.#currentPage = this.#currentPage - 1;
 		this.processUpdate();
 	};
 
+	/**
+	 * Go to a specific page
+	 */
 	public readonly gotoPage = (page: number) => {
 		if (page >= this.#totalPage || page <= 1 || page === this.#currentPage) return;
 		this.#currentPage = page;
 		this.processUpdate();
 	};
 
+	/**
+	 * Set the number of items per page
+	 */
 	public readonly setPerPage = (newPerPage: number) => {
 		this.#perPage = newPerPage;
 		this.#currentPage = 1;
@@ -273,6 +410,9 @@ export class DataTable<
 		return this;
 	}
 
+	/**
+	 * Filter the data by the given defined filter from `config`
+	 */
 	public readonly filterBy = <K extends FilterKeys>(
 		key: K,
 		args: Parameters<F[K]>[1],
@@ -283,12 +423,19 @@ export class DataTable<
 		this.processUpdate();
 	};
 
+	/**
+	 * Remove a filter from `pendingFilter`
+	 * set `immediate` to true if you want to remove the filter from `appliableFilter` as well
+	 */
 	public readonly removeFilter = <K extends FilterKeys>(key: K, immediate = false) => {
 		delete this.#pendingFilter[key];
 		if (immediate) delete this.#appliableFilter[key];
 		this.processUpdate();
 	};
 
+	/**
+	 * Clear all filters from `pendingFilter` and `appliableFilter`
+	 */
 	public readonly clearFilters = () => {
 		this.#appliableFilter = {} as {
 			[K in keyof F]: FilterArg<F[K]>;
@@ -299,6 +446,9 @@ export class DataTable<
 		this.processUpdate();
 	};
 
+	/**
+	 * Apply the pending filter to `appliableFilter`
+	 */
 	public readonly applyPendingFilter = () => {
 		const snap = $state.snapshot(this.#pendingFilter) as {
 			[K in keyof F]: FilterArg<F[K]>;
@@ -309,6 +459,9 @@ export class DataTable<
 		this.processUpdate();
 	};
 
+	/**
+	 * Reset the data table, including `appliableFilter`, `appliableSort`, `currentPage`, `perPage`, `search` and re-process the data
+	 */
 	public readonly reset = () => {
 		this.#appliableFilter = {} as {
 			[K in keyof F]: FilterArg<F[K]>;
@@ -318,11 +471,14 @@ export class DataTable<
 			dir: 'asc' | 'desc';
 		};
 		this.#currentPage = 1;
-		this.#perPage = this.config.perPage;
+		this.#perPage = this.config.perPage ?? 10;
 		this.#search = '';
 		this.processUpdate();
 	};
 
+	/**
+	 * Sort the data by the given defined sort from `config`
+	 */
 	public readonly sortBy = (col: SortingKeys, dir?: 'asc' | 'desc') => {
 		const isTheSameColumn = this.#appliableSort.current === col;
 		this.#appliableSort = {
@@ -332,6 +488,9 @@ export class DataTable<
 		this.processUpdate();
 	};
 
+	/**
+	 * Remove the sort from `appliableSort`
+	 */
 	public readonly removeSort = () => {
 		this.#appliableSort = {
 			current: '' as SortingKeys,
@@ -340,50 +499,110 @@ export class DataTable<
 		this.processUpdate();
 	};
 
+	/**
+	 * @readonly data
+	 * get the processed data
+	 */
 	get data() {
 		return this.#data.value;
 	}
+	/**
+	 * @readonly perPage
+	 * get the number of items per page
+	 */
 	get perPage() {
 		return this.#perPage;
 	}
+	/**
+	 * @readonly currentPage
+	 * get the current page
+	 */
 	get currentPage() {
 		return this.#currentPage;
 	}
+	/**
+	 * @readonly totalItems
+	 * get the total number of items
+	 */
 	get totalItems() {
 		return this.#totalItems;
 	}
+	/**
+	 * @readonly totalPage
+	 * get the total number of pages
+	 */
 	get totalPage() {
 		return this.#totalPage;
 	}
+	/**
+	 * @readonly pageList
+	 * get the list of pages
+	 */
 	get pageList() {
 		return this.#pageList;
 	}
+	/**
+	 * @readonly canGoNext
+	 * whether we can go to the next page
+	 */
 	get canGoNext() {
 		return this.#canGoNext;
 	}
+	/**
+	 * @readonly canGoPrevious
+	 * whether we can go to the previous page
+	 */
 	get canGoPrevious() {
 		return this.#canGoPrevious;
 	}
+	/**
+	 * @readonly showingFrom
+	 * get the number of items showing from
+	 */
 	get showingFrom() {
 		return this.#showingFrom;
 	}
+	/**
+	 * @readonly showingTo
+	 * get the number of items showing to
+	 */
 	get showingTo() {
 		return this.#showingTo;
 	}
+	/**
+	 * @readonly appliableFilter
+	 * get all applied filter
+	 */
 	get appliableFilter() {
 		return this.#appliableFilter;
 	}
+	/**
+	 * @readonly appliableSort
+	 * get all applied sort
+	 */
 	get appliableSort() {
 		return this.#appliableSort;
 	}
+	/**
+	 * @readonly sortKeys
+	 * get all the keys from `config.sorts`
+	 */
 	get sortKeys() {
 		return this.config.sorts
 			? (Object.keys(this.config.sorts) as SortingKeys[])
 			: ([] as SortingKeys[]);
 	}
+	/**
+	 * @readonly pendingFilter
+	 * get all of the `pendingFilter`
+	 */
 	get pendingFilter() {
 		return this.#pendingFilter;
 	}
+	/**
+	 * @readonly search
+	 * if you want to set the value, use `setSearch`
+	 */
 	get search() {
 		return this.#search;
 	}
