@@ -1,19 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+export type Filter<T, M extends Mode> = Record<
+	string,
+	M extends 'client' ? (item: T, args: any) => boolean : unknown
+>;
+
 type FilterFunction<T, A> = (item: T, args: A) => boolean;
-type FilterArg<F> = F extends FilterFunction<any, infer A> ? A : never;
-type Filter<T> = Record<string, (item: T, args: any) => boolean>;
+type FilterArg<F, M extends Mode> = M extends 'client'
+	? F extends FilterFunction<any, infer A>
+		? A
+		: never
+	: F;
 
-type Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
+type AppliableFilter<M extends Mode, F extends Filter<any, M>> = {
+	[K in keyof F]: FilterArg<F[K], M>;
+};
 
-type Query<T> = (param: QueryParam) => Promise<QueryResult<T>>;
+export type Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
+
+export type Query<T> = (param: QueryParam) => Promise<QueryResult<T>>;
 type QueryResult<T> = { result: T[]; totalItems: number };
 type QueryParam = {
 	search: string;
 	page: number;
 };
 
-type Mode = 'server' | 'client' | 'manual';
+export type Mode = 'server' | 'client' | 'manual';
 
 /**
  * The client side configuration
@@ -23,6 +35,10 @@ type ClientConfig<T> = {
 	 * The initial data
 	 */
 	initial: T[];
+	/**
+	 * The total number of items if your mode is server or manual
+	 */
+	totalItems?: number;
 	/**
 	 * The search function
 	 */
@@ -36,10 +52,6 @@ type ServerConfig<T> = {
 	 * The query function, this is where the data is fetched from the server
 	 */
 	queryFn: Query<T>;
-	/**
-	 * The total number of items if your mode is server or manual
-	 */
-	totalItems: number;
 };
 /**
  * The manual configuration
@@ -50,22 +62,22 @@ type ManualConfig<T> = {
 	 */
 	initial: T[];
 	/**
-	 * The process function, this is where the data is fetched and processed by yourself
-	 */
-	processWith: () => Promise<void>;
-	/**
 	 * The total number of items if your mode is server or manual
 	 */
 	totalItems: number;
+	/**
+	 * The process function, this is where the data is fetched and processed by yourself
+	 */
+	processWith: () => Promise<void>;
 };
 /**
  * The configuration for initiating the DataTable
  * @template T The type of the data
  * @template M The mode of the DataTable
- * @template F The type of the filter
+ * @template F The type of the filter, depending on the `Mode`, the value might be different
  * @template S The type of the sorting
  */
-export type Config<T, M, F extends Filter<T>, S extends Sorting<T>> = {
+export type Config<T, M extends Mode, F extends Filter<T, M>, S extends Sorting<T>> = {
 	/**
 	 * The mode of the DataTable
 	 */
@@ -83,13 +95,13 @@ export type Config<T, M, F extends Filter<T>, S extends Sorting<T>> = {
 	 */
 	search?: string;
 	/**
-	 * The list of your filters
-	 */
-	filters?: F;
-	/**
 	 * The list of your sorting
 	 */
 	sorts?: S;
+	/**
+	 * The list of your filters, depending on the `Mode`, the value might be different
+	 */
+	filters?: F;
 } & (M extends 'client'
 	? ClientConfig<T>
 	: M extends 'server'
@@ -118,7 +130,7 @@ export type Config<T, M, F extends Filter<T>, S extends Sorting<T>> = {
 export function createDataTable<
 	T extends Record<string, any>,
 	M extends Mode,
-	F extends Filter<T>,
+	F extends Filter<T, M>,
 	S extends Sorting<T>
 >(config: Config<T, M, F, S>) {
 	return new DataTable<T, M, F, S>(config);
@@ -127,7 +139,7 @@ export function createDataTable<
 export class DataTable<
 	T extends Record<string, any>,
 	M extends Mode,
-	F extends Filter<T>,
+	F extends Filter<T, M>,
 	S extends Sorting<T>
 > {
 	/**
@@ -175,19 +187,11 @@ export class DataTable<
 	/**
 	 * The filter that is currently applied, we keep track of the filter to apply it to the data
 	 */
-	#appliableFilter = $state<{ [K in keyof F]: FilterArg<F[K]> }>(
-		{} as {
-			[K in keyof F]: FilterArg<F[K]>;
-		}
-	);
+	#appliableFilter = $state<AppliableFilter<M, F>>({} as AppliableFilter<M, F>);
 	/**
 	 * The filter that is currently pending to be applied
 	 */
-	#pendingFilter = $state(
-		{} as {
-			[K in keyof F]: FilterArg<F[K]>;
-		}
-	);
+	#pendingFilter = $state({} as AppliableFilter<M, F>);
 	/**
 	 * The sorting that is currently applied, we keep track of the sorting to apply it to the data
 	 */
@@ -318,7 +322,9 @@ export class DataTable<
 								? this.config.searchWith(v, this.#search)
 								: true) &&
 							Object.entries(this.#appliableFilter).every(([filterKey, args]) =>
-								this.config.filters?.[filterKey]?.(v, args)
+								typeof this.config.filters?.[filterKey] === 'function'
+									? this.config.filters?.[filterKey]?.(v, args)
+									: true
 							)
 					)
 					.sort((a, b) => {
@@ -410,7 +416,7 @@ export class DataTable<
 	 */
 	public readonly filterBy = <K extends keyof F>(
 		key: K,
-		args: Parameters<F[K]>[1],
+		args: FilterArg<F[K], M>,
 		immediate = false
 	) => {
 		if (immediate) this.#appliableFilter[key] = args;
@@ -432,12 +438,8 @@ export class DataTable<
 	 * Clear all filters from `pendingFilter` and `appliableFilter`
 	 */
 	public readonly clearFilters = () => {
-		this.#appliableFilter = {} as {
-			[K in keyof F]: FilterArg<F[K]>;
-		};
-		this.#pendingFilter = {} as {
-			[K in keyof F]: FilterArg<F[K]>;
-		};
+		this.#appliableFilter = {} as AppliableFilter<M, F>;
+		this.#pendingFilter = {} as AppliableFilter<M, F>;
 		this.processUpdate();
 	};
 
@@ -445,12 +447,8 @@ export class DataTable<
 	 * Apply the pending filter to `appliableFilter`
 	 */
 	public readonly applyPendingFilter = () => {
-		const snap = $state.snapshot(this.#pendingFilter) as {
-			[K in keyof F]: FilterArg<F[K]>;
-		};
-		this.#appliableFilter = {
-			...snap
-		};
+		const snap = $state.snapshot(this.#pendingFilter);
+		this.#appliableFilter = snap as AppliableFilter<M, F>;
 		this.processUpdate();
 	};
 
@@ -458,9 +456,7 @@ export class DataTable<
 	 * Reset the data table, including `appliableFilter`, `appliableSort`, `currentPage`, `perPage`, `search` and re-process the data
 	 */
 	public readonly reset = () => {
-		this.#appliableFilter = {} as {
-			[K in keyof F]: FilterArg<F[K]>;
-		};
+		this.#appliableFilter = {} as AppliableFilter<M, F>;
 		this.#appliableSort = {} as {
 			current: keyof S;
 			dir: 'asc' | 'desc';
@@ -595,10 +591,15 @@ export class DataTable<
 		return this.#pendingFilter;
 	}
 	/**
-	 * @readonly search
-	 * if you want to set the value, use `setSearch`
+	 * search value
 	 */
 	get search() {
 		return this.#search;
+	}
+	/**
+	 * set the search value
+	 */
+	set search(value: string) {
+		this.#search = value;
 	}
 }
