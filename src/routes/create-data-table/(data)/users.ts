@@ -1,7 +1,7 @@
 import type { UserPaginationConfig } from '../(schema)/pagination-schema.js';
 import { randomDate } from '../(utils)/utils.js';
 
-interface User {
+export interface User {
 	id: string;
 	name: string;
 	email: string;
@@ -29,6 +29,10 @@ export const users: User[] = Array.from({ length: 100 }, (_, i) => ({
 	createdAt: randomDate(i)
 }));
 
+export function getAllUser() {
+	return users;
+}
+
 export function getUser(config: UserPaginationConfig) {
 	const result = users.filter((user) => {
 		return (
@@ -40,12 +44,13 @@ export function getUser(config: UserPaginationConfig) {
 					: user.age < 18)
 		);
 	});
+	console.log(config);
 	const totalItems = result.length;
 	const paginated = result
 		.sort((a, b) => {
 			return config.sort === 'desc'
-				? a.createdAt.getTime() - b.createdAt.getTime()
-				: b.createdAt.getTime() - a.createdAt.getTime();
+				? b.createdAt.getTime() - a.createdAt.getTime()
+				: a.createdAt.getTime() - b.createdAt.getTime();
 		})
 		.slice((config.page - 1) * config.limit, config.page * config.limit);
 	return {

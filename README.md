@@ -2,7 +2,23 @@
 
 A collection of Svelte custom hooks that I commonly use across projects.
 
+## 🛠️ Required Dependencies
+
+This package only run for sveltekit projects, it requires the following dependencies to be installed in your project:
+
+- `svelte version 5 or latest`
+- `@sveltejs/kit latest version`
+- `zod/v4`
+
 ## 📦 Installation
+
+We have to install zod first
+
+```bash
+bun add zod
+```
+
+Then we can install this package by executing following command
 
 ```bash
 bun add svelte-common-hooks
@@ -44,7 +60,9 @@ This is a custom hook for creating data table utilities, it is used to create a 
 
 - [Source](./src/lib/create-form-state.svelte.ts)
 
-this hook is used to create a form state, it will validate the form state on input and blur, it relies on zod/v4 for validation
+**This hooks relies on zod/v4 for validation, so make sure you already installed zod/v4**
+
+this hook is used to create a form state, it will validate the form state on input and blur.
 
 ```svelte
 <script lang="ts">
@@ -58,17 +76,27 @@ this hook is used to create a form state, it will validate the form state on inp
 	 * you might also wrap it in a $derived() runes if the initial value is dynamic
 	 */
 	const formState = createFormState({
+		/**
+		 * The schema thats use to validate the form.
+		 * the schema is required
+		 */
 		schema: z.object({
 			name: z.string().min(1),
 			email: z.email(),
 			age: z.number().min(18)
 		}),
+		/**
+		 * The initial value of the form (optional).
+		 */
 		initial: {
 			name: 'John Doe',
 			email: 'john.doe@example.com',
 			age: 18,
 			customProperty: 'the property that is not exist in the schema is allowed but ignored'
 		},
+		/**
+		 * Optionally append more attribute to the form field.
+		 */
 		attribute: {
 			email: createAttribute<HTMLInputAttributes>({
 				type: 'email',

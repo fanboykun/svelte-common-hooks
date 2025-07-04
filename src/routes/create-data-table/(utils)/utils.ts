@@ -16,9 +16,20 @@ export function stringToEnum<Enum extends Readonly<[any, ...any[]]>, DefaultEnum
 	defaultEnum: DefaultEnum
 ): Enum[number] {
 	if (!strEnum || !strEnum?.length) return defaultEnum;
+	if (!Array.isArray(enums)) return defaultEnum;
 	if (enums.includes(strEnum)) return strEnum;
 	return defaultEnum;
 }
 export function randomDate(randomNum: number) {
 	return new Date(Date.now() - randomNum * 24 * 60 * 60 * 1000);
+}
+
+export function isNullish(value: unknown) {
+	return (
+		value === null ||
+		value === undefined ||
+		(typeof value === 'string' && !value?.length) ||
+		(Array.isArray(value) && !value.length) ||
+		(typeof value === 'object' && value !== null && !Object.keys(value).length)
+	);
 }

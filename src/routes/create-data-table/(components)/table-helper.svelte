@@ -1,6 +1,6 @@
 <script
 	lang="ts"
-	generics="T extends Record<string, any>, M extends Mode, F extends Filter<T, M>, S extends Sorting<T, M>, C extends string[]"
+	generics="M extends Mode, T extends Record<string, any>, F extends Filter<T, M>, S extends Sorting<T, M>, C extends string[]"
 >
 	import { type DataTable, type Mode, type Filter, type Sorting } from '$lib/index.svelte';
 	import type { Snippet } from 'svelte';
@@ -10,14 +10,14 @@
 	import Button, { buttonVariants } from '@/components/ui/button/button.svelte';
 	import * as DropdownMenu from '@/components/ui/dropdown-menu/index.js';
 	// @ts-expect-error somehow the @lucide/svelte did not get recognized even after re-installing it LOL.
-	import { ArrowBigRight, ArrowBigLeft, Check } from '@lucide/svelte';
+	import { ArrowBigRight, ArrowBigLeft, Check, X } from '@lucide/svelte';
 
 	interface Props {
-		dataTable: DataTable<T, M, F, S>;
+		dataTable: DataTable<M, T, F, S>;
 		Column: Snippet<
-			[{ item: DataTable<T, M, F, S>['data'][number]; column: Record<C[number], boolean> }]
+			[{ item: DataTable<M, T, F, S>['data'][number]; column: Record<C[number], boolean> }]
 		>;
-		Filter?: Snippet<[{ dataTable: DataTable<T, M, F, S> }]>;
+		Filter?: Snippet<[{ dataTable: DataTable<M, T, F, S> }]>;
 		columns?: C;
 		delay?: number;
 		title?: string;
@@ -65,11 +65,23 @@
 					}}
 				/>
 				<div class="flex gap-2">
+					{#if dataTable.hasInteracted}
+						<Button size="icon" variant="destructive" onclick={() => dataTable.reset()}
+							><X /></Button
+						>
+					{/if}
 					{#if dataTable.sortKeys?.length}
 						<DropdownMenu.Root>
-							<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}
-								>Sort</DropdownMenu.Trigger
+							<DropdownMenu.Trigger
+								class={buttonVariants({ variant: 'outline', class: 'relative' })}
 							>
+								Sort
+								{#if dataTable.appliableSort.current}
+									<div
+										class="bg-primary absolute -top-1 -right-1 size-2 animate-pulse rounded-full"
+									></div>
+								{/if}
+							</DropdownMenu.Trigger>
 							<DropdownMenu.Content>
 								<DropdownMenu.Group>
 									{#each dataTable.sortKeys as sortKey (sortKey)}

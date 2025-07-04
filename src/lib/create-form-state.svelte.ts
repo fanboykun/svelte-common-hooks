@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from 'zod/v4';
 type Prettify<T> = {
 	[K in keyof T]: T[K];
@@ -106,11 +105,13 @@ export function createAttribute<InputAttribute extends Record<string, any>>(
  * 			email: z.string().email(),
  * 			age: z.number().min(18)
  * 		}),
+ * 		// optionally set the initial value
  * 		initial: {
  * 			name: '',
  * 			email: '',
  * 			age: 0
  * 		},
+ * 		// optionally append more attribute to the form field
  * 		attribute: {
  * 			name: createAttribute<HTMLInputAttributes>({
  * 				type: 'text',

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
+export type PromiseReturnType<T extends () => Promise<unknown>> = Awaited<ReturnType<T>>;
 export type Filter<T, M extends Mode> = Record<
 	string,
 	M extends 'client' ? (item: T, args: any) => boolean : unknown
@@ -15,7 +15,6 @@ type AppliableFilter<M extends Mode, F extends Filter<any, M>> = {
 	[K in keyof F]: FilterArg<F[K], M>;
 };
 
-export type _Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
 export type Sorting<T, M extends Mode> = Record<
 	string,
 	M extends 'client' ? (a: T, b: T, currentDir: 'asc' | 'desc') => number : 'asc' | 'desc'
@@ -26,8 +25,8 @@ type AppliableSort<M extends Mode, S extends Sorting<any, M>> = {
 	dir?: 'asc' | 'desc';
 };
 
-export type Query<T> = () => Promise<QueryResult<T> | void>;
-type QueryResult<T> = { result: T[]; totalItems: number };
+export type Query<T> = () => Promise<QueryResult<T>>;
+export type QueryResult<T> = { result: T[]; totalItems: number };
 
 export type Mode = 'server' | 'client' | 'manual';
 
@@ -81,12 +80,7 @@ type ManualConfig<T> = {
  * @template F The type of the filter, depending on the `Mode`, the value might be different
  * @template S The type of the sorting
  */
-export type Config<
-	T = any,
-	M extends Mode = Mode,
-	F extends Filter<T, M> = {},
-	S extends Sorting<T, M> = {}
-> = {
+export type Config<M extends Mode, T, F extends Filter<T, M>, S extends Sorting<T, M>> = {
 	/**
 	 * The mode of the DataTable
 	 */
@@ -149,17 +143,17 @@ export type Config<
  * ```
  */
 export function createDataTable<
-	T extends Record<string, any>,
 	M extends Mode,
+	T extends Record<string, any>,
 	F extends Filter<T, M>,
 	S extends Sorting<T, M>
->(config: Config<T, M, F, S>) {
-	return new DataTable<T, M, F, S>(config);
+>(config: Config<M, T, F, S>) {
+	return new DataTable<M, T, F, S>(config);
 }
 
 export class DataTable<
-	T extends Record<string, any>,
 	M extends Mode,
+	T extends Record<string, any>,
 	F extends Filter<T, M>,
 	S extends Sorting<T, M>
 > {
@@ -174,10 +168,11 @@ export class DataTable<
 	 * We keep track of the initial as a state
 	 */
 	private initial = $state<T[]>([]);
+	// private initial = $state<Result[]>([]);
 	/**
 	 * Keep the config as a class property for use later
 	 */
-	private config: Config<T, M, F, S>;
+	private config: Config<M, T, F, S>;
 	/**
 	 * Only available on server mode
 	 * This is where the data is fetched from the server
@@ -261,7 +256,7 @@ export class DataTable<
 	 */
 	#search = $state<string>('');
 
-	constructor(config: Config<T, M, F, S>) {
+	constructor(config: Config<M, T, F, S>) {
 		if (config.mode === 'server' && 'queryFn' in config && config.queryFn) {
 			this.queryFn = config.queryFn;
 		} else if (
@@ -298,19 +293,16 @@ export class DataTable<
 			if (config.mode === 'server' && this.queryFn) {
 				this.queryFn()?.then?.((result) => {
 					if (result && 'result' in result && 'totalItems' in result) {
-						this.#data = {
-							length: result.totalItems,
-							value: result.result
-						};
+						this.updateDataAndTotalItems(result.result, result.totalItems);
 					}
 				});
 			}
 		});
 	}
 	/**
-	 * Whether any filter is applied
+	 * Whether any interaction happened
 	 */
-	public readonly isFilterApplied = $derived.by(() => {
+	public readonly hasInteracted = $derived.by(() => {
 		if (this.#search) return true;
 		if (this.#appliableSort.current) return true;
 		if (Object.keys(this.#appliableFilter ?? {}).length) return true;
@@ -359,9 +351,9 @@ export class DataTable<
 							)
 					)
 					.sort((a, b) => {
-						if (!this.config.sorts || !this.#appliableSort.current || this.config.mode === 'client')
+						if (!this.config.sorts || !this.#appliableSort.current || this.config.mode !== 'client')
 							return 0;
-						const sortFn = this.config.sorts[this.#appliableSort.current];
+						const sortFn = this.config?.sorts?.[this.#appliableSort.current];
 						if (typeof sortFn === 'function') return sortFn(a, b, this.#appliableSort.dir ?? 'asc');
 						return 0;
 					})
@@ -467,10 +459,17 @@ export class DataTable<
 	public readonly filterBy = <K extends keyof F>(
 		key: K,
 		args: FilterArg<F[K], M>,
-		immediate = false
+		config: { immediate?: boolean; resetPage?: boolean; resetSearch?: boolean } = {
+			immediate: false,
+			resetPage: false,
+			resetSearch: false
+		}
 	) => {
-		if (immediate) this.#appliableFilter[key] = args;
+		if (typeof this.config.filters === 'undefined') return;
+		if (config.immediate) this.#appliableFilter[key] = args;
 		else this.#pendingFilter[key] = args;
+		if (config.resetPage) this.#currentPage = 1;
+		if (config.resetSearch) this.#search = '';
 		this.processUpdate();
 	};
 
@@ -539,6 +538,19 @@ export class DataTable<
 			dir: undefined
 		} as AppliableSort<M, S>;
 		this.processUpdate();
+	};
+
+	/**
+	 * Get all of the state used for fetching data
+	 */
+	public readonly getConfig = () => {
+		return {
+			search: $state.snapshot(this.#search),
+			page: $state.snapshot(this.#currentPage),
+			limit: $state.snapshot(this.#perPage),
+			filter: $state.snapshot(this.#appliableFilter),
+			sort: $state.snapshot(this.#appliableSort)
+		};
 	};
 
 	/**

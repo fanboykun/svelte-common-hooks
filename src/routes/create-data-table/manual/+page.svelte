@@ -5,49 +5,94 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import * as Select from '@/components/ui/select/index.js';
-	import { stringToBoolean, stringToEnum, stringToNumber } from '../(utils)/utils.js';
+	import { isNullish, stringToBoolean, stringToEnum, stringToNumber } from '../(utils)/utils.js';
+	import { setPaginationConfig } from '../(schema)/pagination-schema.js';
 	let { data } = $props();
 
+	/**
+	 * Here we initialize the data table with `manual` mode, we will manually handle the data fetching.
+	 * we put all of the state like pagination, search, filters, and sorts from the url search params.
+	 * Then we use `goto` from sveltekit to force the `load` function to rerun,
+	 * and returning the updated data with the config in the `searchParams`.
+	 * since we working with the `load` function, this will be `SSR`ed.
+	 */
 	const dataTable = createDataTable({
+		/**
+		 * we use `manual` mode, this mode will not do the filter, pagination, search and sort in the client side,
+		 * It is encouraging you to move it to the server instead inside `load` function and store the state in the search params.
+		 */
 		mode: 'manual',
+		/**
+		 * we pass the paginated/sliced data here
+		 */
 		initial: data.users,
+		/**
+		 * we pass the unpaginated/unsliced data so then we know is the data have another page
+		 * see how i implemented it in +page.server.ts
+		 */
 		totalItems: data.totalItems,
+		/**
+		 * we pass the current page number that we got from url search params,
+		 * we do this so that when the user refresh on the url that has page in the search params,
+		 * the data table will also be on the same page
+		 */
 		page: stringToNumber(page.url.searchParams.get('page'), 1),
+		/**
+		 * we pass the search query that we got from url search params,
+		 * we do this so that when the user refresh on the url that has search in the search params,
+		 * the data table will also be on the same search query
+		 */
 		search: page.url.searchParams.get('search') ?? '',
+		/**
+		 * we pass the filters that we got from url search params,
+		 * we do this so that when the user refresh on the url that has filter in the search params,
+		 * the data table will also be on the same filter.
+		 *
+		 * In `manual` mode, the filter object accept Record<string, unknown> type.
+		 * It is helping us by providing strong typing to do `filterBy` later
+		 */
 		filters: {
-			isAdult: stringToBoolean(page.url.searchParams.get('isAdult'), null)
+			isAdult: stringToBoolean(page.url.searchParams.get('isAdult'), undefined)
 		},
+		/**
+		 * we pass the sorts that we got from url search params,
+		 * we do this so that when the user refresh on the url that has sort in the search params,
+		 * the data table will also be on the same sort.
+		 *
+		 * In `manual` mode, the sort object accept Record<string, unknown> type.
+		 * It is helping us by providing strong typing to do `sortBy` later
+		 */
 		sorts: {
 			createdAt: stringToEnum(page.url.searchParams.get('sort'), ['asc', 'desc'] as const, 'desc')
 		},
+		/**
+		 * In `manual` mode, we get our data with `processWith` function.
+		 * We get the state from the dataTable and store it in the url search params
+		 * so that our load function can read them and return the updated data
+		 */
 		processWith: async () => {
-			const url = new URL($state.snapshot(page.url));
+			// get the snapshotted config to send to the server
+			const config = dataTable.getConfig();
+			// create a new url to send to the server with the config in the searchParam
+			const url = setPaginationConfig(new URL($state.snapshot(page.url)), {
+				isAdult: config.filter.isAdult,
+				page: config.page,
+				search: config.search,
+				sort: config.sort.current && config.sort.dir ? config.sort.dir : null,
+				limit: config.limit
+			});
 
-			if (dataTable.currentPage <= 1 || dataTable.currentPage > dataTable.totalPage)
-				url.searchParams.delete('page');
-			else url.searchParams.set('page', dataTable.currentPage.toString());
-
-			if (!dataTable.search?.length) url.searchParams.delete('search');
-			else url.searchParams.set('search', dataTable.search);
-
-			if (
-				dataTable.appliableFilter.isAdult === null ||
-				dataTable.appliableFilter.isAdult === undefined
-			)
-				url.searchParams.delete('isAdult');
-			else url.searchParams.set('isAdult', `${dataTable.appliableFilter.isAdult}`);
-
-			if (dataTable.appliableSort.current && dataTable.appliableSort.dir) {
-				url.searchParams.set('sort', dataTable.appliableSort.dir);
-			} else {
-				url.searchParams.delete('sort');
-			}
-
+			// here we force the `load` function to rerun and sending the updated config in the url object
 			await goto(url, {
+				// keep the focus in case the user is typing on the search bar
 				keepFocus: true,
+				// invalidate the `users:manual` load function so that it will rerun
 				invalidate: ['users:manual'],
+				// prevent the page from scrolling to the top
 				noScroll: true
 			});
+
+			// we then finally can updated the data and totalItems returning from the `load` function here
 			dataTable.updateDataAndTotalItems(data.users, data.totalItems);
 		}
 	});
@@ -65,13 +110,16 @@
 		<div class="space-y-4">
 			<Select.Root
 				type="single"
+				value={`${dataTable.appliableFilter.isAdult ?? ''}`}
 				onValueChange={(value) => {
-					if (!value) dataTable.filterBy('isAdult', null, true);
-					else dataTable.filterBy('isAdult', value === 'true', true);
+					if (!value)
+						dataTable.filterBy('isAdult', undefined, { immediate: true, resetPage: true });
+					else
+						dataTable.filterBy('isAdult', value === 'true', { immediate: true, resetPage: true });
 				}}
 			>
 				<Select.Trigger class="w-[180px]"
-					>{dataTable.appliableFilter.isAdult === null
+					>{isNullish(dataTable.appliableFilter.isAdult)
 						? 'All'
 						: dataTable.appliableFilter.isAdult
 							? 'Adult'
