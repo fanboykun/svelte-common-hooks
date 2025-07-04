@@ -1,5 +1,11 @@
 {
 	"name": "svelte-common-hooks",
+	"description": "Common hooks for Svelte",
+	"author": {
+		"name": "fanboykun",
+		"url": "https://github.com/fanboykun",
+		"email": "joyykun@gmail.com"
+	},
 	"version": "0.0.1",
 	"repository": {
 		"url": "https://github.com/fanboykun/svelte-common-hooks.git"
