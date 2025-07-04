@@ -47,7 +47,7 @@
 					? a.createdAt.getTime() - b.createdAt.getTime()
 					: b.createdAt.getTime() - a.createdAt.getTime()
 		}
-	});
+	}).hydrate(() => data.users);
 </script>
 
 <TableHelper

@@ -98,7 +98,7 @@ In client mode, you should define your own function to search data, filter and s
 					? a.createdAt.getTime() - b.createdAt.getTime()
 					: b.createdAt.getTime() - a.createdAt.getTime()
 		}
-	});
+	}).hydrate(() => data.users); // hydrate the data in case the page is invalidated, or you could wrap the dataTable inside `$derived` block
 </script>
 ```
 
