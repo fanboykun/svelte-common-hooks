@@ -22,6 +22,24 @@ yarn add svelte-common-hooks
 
 ## 🚀 Usage
 
+### `createDataTable`
+
+- [Source](./src/lib/create-modal-state.svelte.ts)
+
+This is a custom hook for creating data table utilities, it is used to create a data table with pagination, search, and sorting. data fetching can be configured via `Mode`, it can be done in client `Mode`, server `Mode`, or manually make a logic for data fetching via manual `Mode`.
+
+#### Client Mode Example:
+
+- [Source](./src/routes/create-data-table/client/+page.svelte)
+
+#### Server Mode Example:
+
+- [Source](./src/routes/create-data-table/server/+page.svelte)
+
+#### Manual Mode Example:
+
+- [Source](./src/routes/create-data-table/manual/+page.svelte)
+
 ### `createFormState`
 
 - [Source](./src/lib/create-form-state.svelte.ts)
