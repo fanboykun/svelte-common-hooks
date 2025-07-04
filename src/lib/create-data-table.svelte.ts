@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type Filter<T, M extends Mode> = Record<
 	string,
 	M extends 'client' ? (item: T, args: any) => boolean : unknown
@@ -14,16 +15,19 @@ type AppliableFilter<M extends Mode, F extends Filter<any, M>> = {
 	[K in keyof F]: FilterArg<F[K], M>;
 };
 
-export type Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
+export type _Sorting<T> = Record<string, (a: T, b: T, currentDir: 'asc' | 'desc') => number>;
+export type Sorting<T, M extends Mode> = Record<
+	string,
+	M extends 'client' ? (a: T, b: T, currentDir: 'asc' | 'desc') => number : 'asc' | 'desc'
+>;
 
-export type Query<T> = (param: QueryParam) => Promise<QueryResult<T> | void>;
-type QueryResult<T> = { result: T[]; totalItems: number };
-type QueryParam = {
-	search: string;
-	page: number;
-	// filter: AppliableFilter<Mode, Filter<any, Mode>>;
-	filter: Record<string, any>;
+type AppliableSort<M extends Mode, S extends Sorting<any, M>> = {
+	current?: keyof S;
+	dir?: 'asc' | 'desc';
 };
+
+export type Query<T> = () => Promise<QueryResult<T> | void>;
+type QueryResult<T> = { result: T[]; totalItems: number };
 
 export type Mode = 'server' | 'client' | 'manual';
 
@@ -77,7 +81,12 @@ type ManualConfig<T> = {
  * @template F The type of the filter, depending on the `Mode`, the value might be different
  * @template S The type of the sorting
  */
-export type Config<T, M extends Mode, F extends Filter<T, M>, S extends Sorting<T>> = {
+export type Config<
+	T = any,
+	M extends Mode = Mode,
+	F extends Filter<T, M> = {},
+	S extends Sorting<T, M> = {}
+> = {
 	/**
 	 * The mode of the DataTable
 	 */
@@ -143,7 +152,7 @@ export function createDataTable<
 	T extends Record<string, any>,
 	M extends Mode,
 	F extends Filter<T, M>,
-	S extends Sorting<T>
+	S extends Sorting<T, M>
 >(config: Config<T, M, F, S>) {
 	return new DataTable<T, M, F, S>(config);
 }
@@ -152,7 +161,7 @@ export class DataTable<
 	T extends Record<string, any>,
 	M extends Mode,
 	F extends Filter<T, M>,
-	S extends Sorting<T>
+	S extends Sorting<T, M>
 > {
 	/**
 	 * we do this to avoid reprocessing the initial data
@@ -207,12 +216,10 @@ export class DataTable<
 	/**
 	 * The sorting that is currently applied, we keep track of the sorting to apply it to the data
 	 */
-	#appliableSort = $state<{ current: keyof S; dir: 'asc' | 'desc' }>(
-		{} as {
-			current: keyof S;
-			dir: 'asc' | 'desc';
-		}
-	);
+	#appliableSort = $state<AppliableSort<M, S>>({
+		current: undefined,
+		dir: undefined
+	} as AppliableSort<M, S>);
 	/**
 	 * The number of items per page
 	 */
@@ -289,11 +296,7 @@ export class DataTable<
 		 */
 		$effect(() => {
 			if (config.mode === 'server' && this.queryFn) {
-				this.queryFn({
-					page: this.#currentPage,
-					search: this.#search,
-					filter: this.#appliableFilter
-				})?.then?.((result) => {
+				this.queryFn()?.then?.((result) => {
 					if (result && 'result' in result && 'totalItems' in result) {
 						this.#data = {
 							length: result.totalItems,
@@ -313,6 +316,16 @@ export class DataTable<
 		if (Object.keys(this.#appliableFilter ?? {}).length) return true;
 		return false;
 	});
+
+	/**
+	 * Update the data and total items, should only be used in manual `Mode`
+	 * @param data the new data
+	 * @param totalItems the new total items
+	 */
+	public readonly updateDataAndTotalItems = (data: T[], totalItems: number) => {
+		this.#data.value = data;
+		this.#totalItems = totalItems;
+	};
 
 	private timeout: number | null = null;
 	/**
@@ -346,14 +359,11 @@ export class DataTable<
 							)
 					)
 					.sort((a, b) => {
-						if (!this.config.sorts || !this.#appliableSort.current) return 0;
-						return (
-							this.config.sorts[this.#appliableSort.current]?.(
-								a,
-								b,
-								this.#appliableSort.dir ?? 'asc'
-							) ?? 0
-						);
+						if (!this.config.sorts || !this.#appliableSort.current || this.config.mode === 'client')
+							return 0;
+						const sortFn = this.config.sorts[this.#appliableSort.current];
+						if (typeof sortFn === 'function') return sortFn(a, b, this.#appliableSort.dir ?? 'asc');
+						return 0;
 					})
 			: [];
 		return {
@@ -497,10 +507,10 @@ export class DataTable<
 	 */
 	public readonly reset = () => {
 		this.#appliableFilter = {} as AppliableFilter<M, F>;
-		this.#appliableSort = {} as {
-			current: keyof S;
-			dir: 'asc' | 'desc';
-		};
+		this.#appliableSort = {
+			current: undefined,
+			dir: undefined
+		} as AppliableSort<M, S>;
 		this.#currentPage = 1;
 		this.#perPage = this.config.perPage ?? 10;
 		this.#search = '';
@@ -512,6 +522,7 @@ export class DataTable<
 	 */
 	public readonly sortBy = (col: keyof S, dir?: 'asc' | 'desc') => {
 		const isTheSameColumn = this.#appliableSort.current === col;
+		if (isTheSameColumn && dir === this.#appliableSort.dir) return;
 		this.#appliableSort = {
 			current: col,
 			dir: dir ?? (isTheSameColumn ? (this.#appliableSort.dir === 'asc' ? 'desc' : 'asc') : 'asc')
@@ -524,9 +535,9 @@ export class DataTable<
 	 */
 	public readonly removeSort = () => {
 		this.#appliableSort = {
-			current: '' as keyof S,
-			dir: 'desc'
-		};
+			current: undefined,
+			dir: undefined
+		} as AppliableSort<M, S>;
 		this.processUpdate();
 	};
 

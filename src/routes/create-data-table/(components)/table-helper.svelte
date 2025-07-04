@@ -1,22 +1,39 @@
 <script
 	lang="ts"
-	generics="T extends Record<string, any>, M extends Mode, F extends Filter<T, M>, S extends Sorting<T>, C extends string[]"
+	generics="T extends Record<string, any>, M extends Mode, F extends Filter<T, M>, S extends Sorting<T, M>, C extends string[]"
 >
 	import { type DataTable, type Mode, type Filter, type Sorting } from '$lib/index.svelte';
 	import type { Snippet } from 'svelte';
 	import * as Table from '@/components/ui/table/index.js';
 	import * as Card from '@/components/ui/card/index.js';
 	import { Input } from '@/components/ui/input/index.js';
-	import Button from '@/components/ui/button/button.svelte';
+	import Button, { buttonVariants } from '@/components/ui/button/button.svelte';
+	import * as DropdownMenu from '@/components/ui/dropdown-menu/index.js';
+	// @ts-expect-error somehow the @lucide/svelte did not get recognized even after re-installing it LOL.
+	import { ArrowBigRight, ArrowBigLeft, Check } from '@lucide/svelte';
 
 	interface Props {
 		dataTable: DataTable<T, M, F, S>;
 		Column: Snippet<
 			[{ item: DataTable<T, M, F, S>['data'][number]; column: Record<C[number], boolean> }]
 		>;
+		Filter?: Snippet<[{ dataTable: DataTable<T, M, F, S> }]>;
 		columns?: C;
+		delay?: number;
+		title?: string;
+		description?: string;
+		searchPlaceholder?: string;
 	}
-	let { dataTable, Column, columns }: Props = $props();
+	let {
+		dataTable,
+		Column,
+		Filter: FilterSnippet,
+		columns,
+		delay = 0,
+		title = 'Data Table Example',
+		description = 'Example of using DataTable',
+		searchPlaceholder = 'Search'
+	}: Props = $props();
 	const columnList = $state<Record<C[number], boolean>>(
 		columns
 			? columns.reduce(
@@ -28,31 +45,57 @@
 				)
 			: ({} as Record<C[number], boolean>)
 	);
-	function handleInput(value: string) {
-		if (dataTable.mode === 'client') return;
-		dataTable.setSearch(
-			value,
-			// 500 ms delay
-			500
-		);
-	}
 </script>
 
 <Card.Root>
 	<Card.Header>
 		<div class="flex flex-col gap-2">
 			<div class="flex flex-col gap-2">
-				<Card.Title>Data Table Example</Card.Title>
-				<Card.Description>Example of using DataTable</Card.Description>
+				<Card.Title>{title}</Card.Title>
+				<Card.Description>{description}</Card.Description>
 			</div>
-			<Input
-				class="w-full max-w-1/2"
-				bind:value={dataTable.search}
-				oninput={(event) => {
-					const value = event.currentTarget.value;
-					handleInput(value);
-				}}
-			/>
+			<div class="flex w-full justify-between gap-4">
+				<Input
+					class="w-full max-w-1/2"
+					value={dataTable.search}
+					placeholder={searchPlaceholder}
+					oninput={(event) => {
+						const value = event.currentTarget.value;
+						dataTable.setSearch(value, delay);
+					}}
+				/>
+				<div class="flex gap-2">
+					{#if dataTable.sortKeys?.length}
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}
+								>Sort</DropdownMenu.Trigger
+							>
+							<DropdownMenu.Content>
+								<DropdownMenu.Group>
+									{#each dataTable.sortKeys as sortKey (sortKey)}
+										<DropdownMenu.Item onclick={() => dataTable.sortBy(sortKey, 'desc')}>
+											{sortKey} desc
+											{#if dataTable.appliableSort.current === sortKey && dataTable.appliableSort.dir === 'desc'}
+												<Check />
+											{/if}
+										</DropdownMenu.Item>
+										<DropdownMenu.Separator />
+										<DropdownMenu.Item onclick={() => dataTable.sortBy(sortKey, 'asc')}>
+											{sortKey} asc
+											{#if dataTable.appliableSort.current === sortKey && dataTable.appliableSort.dir === 'asc'}
+												<Check />
+											{/if}
+										</DropdownMenu.Item>
+									{/each}
+								</DropdownMenu.Group>
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					{/if}
+					{#if FilterSnippet}
+						{@render FilterSnippet({ dataTable })}
+					{/if}
+				</div>
+			</div>
 		</div>
 	</Card.Header>
 	<Card.Content>
@@ -73,23 +116,30 @@
 			</Table.Body>
 		</Table.Root>
 	</Card.Content>
-	<Card.Footer class="w-full justify-end gap-2">
-		<Button
-			variant="outline"
-			size="sm"
-			disabled={!dataTable.canGoPrevious}
-			onclick={() => dataTable.previousPage()}
-		>
-			&lt;</Button
-		>
-		<Button size="sm">{dataTable.currentPage}</Button>
-		<Button
-			variant="outline"
-			size="sm"
-			disabled={!dataTable.canGoNext}
-			onclick={() => dataTable.nextPage()}
-		>
-			&gt;</Button
-		>
+	<Card.Footer class="w-full justify-between gap-2">
+		<div class="text-muted-foreground text-sm">
+			Showing <span class="text-primary font-medium">{dataTable.showingFrom}</span> to
+			<span class="text-primary font-medium">{dataTable.showingTo}</span>
+			of <span class="text-primary font-medium">{dataTable.totalItems}</span> items
+		</div>
+		<div class="flex gap-2">
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={!dataTable.canGoPrevious}
+				onclick={() => dataTable.previousPage()}
+			>
+				<ArrowBigLeft /></Button
+			>
+			<Button size="sm">{dataTable.currentPage}</Button>
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={!dataTable.canGoNext}
+				onclick={() => dataTable.nextPage()}
+			>
+				<ArrowBigRight />
+			</Button>
+		</div>
 	</Card.Footer>
 </Card.Root>
