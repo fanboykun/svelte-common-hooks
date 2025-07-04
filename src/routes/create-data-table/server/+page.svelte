@@ -34,6 +34,7 @@
 	 * Initialize the data table with `server` mode,
 	 * we pass the filters and sorts that we want to use,
 	 * and the `queryFn` function that will be used to fetch the data.
+	 * this mode is not `SSR` able since `$effect` block only runs on client
 	 */
 	const dataTable = createDataTable({
 		mode: 'server',
@@ -75,8 +76,8 @@
 </script>
 
 <TableHelper
-	title="Manual DataTable Example"
-	description="Example of using DataTable with manual mode, every thing is done manually by you. this is great if you want to do it with `goto` from sveltekit"
+	title="Server Mode DataTable Example"
+	description="Example of using DataTable with server mode, means that the data processed on the server and fetch happening on the client side"
 	searchPlaceholder="Search users by name"
 	{dataTable}
 	columns={['name', 'email', 'age', 'address', 'created'] as const}

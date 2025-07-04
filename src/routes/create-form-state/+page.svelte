@@ -16,7 +16,7 @@
 		schema: z.object({
 			name: z.string().min(1),
 			email: z.email(),
-			age: z.number().min(18)
+			age: z.coerce.number().min(18)
 		}),
 		/**
 		 * The initial value of the form (optional).
@@ -34,6 +34,11 @@
 			email: createAttribute<HTMLInputAttributes>({
 				type: 'email',
 				required: true
+			}),
+			age: createAttribute<HTMLInputAttributes>({
+				type: 'number',
+				required: true,
+				min: 18
 			})
 		}
 	});

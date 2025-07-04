@@ -44,7 +44,6 @@ export function getUser(config: UserPaginationConfig) {
 					: user.age < 18)
 		);
 	});
-	console.log(config);
 	const totalItems = result.length;
 	const paginated = result
 		.sort((a, b) => {

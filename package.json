@@ -83,5 +83,8 @@
 	],
 	"svelte": "./dist/index.svelte.js",
 	"type": "module",
-	"types": "./dist/index.svelte.d.ts"
+	"types": "./dist/index.svelte.d.ts",
+	"dependencies": {
+		"mode-watcher": "^1.1.0"
+	}
 }
