@@ -10,6 +10,23 @@
 
 <svelte:head>
 	<title>svelte-common-hooks</title>
+	<meta name="description" content="Svelte Common Hooks, a collection of common hooks for Svelte" />
+	<meta
+		name="keywords"
+		content="Svelte, Common Hooks, Svelte Common Hooks, Sveltekit, Svelte Data Table, Svelte Form State, Svelte Modal, Svelte Modal State, Svelte Navigation, Svelte Navigation State, Svelte Modal State"
+	/>
+
+	<!-- Open Graph / Facebook -->
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://svelte-common-hooks.fanboykun.com" />
+	<meta property="og:title" content="Svelte Common Hooks" />
+	<meta property="og:description" content="A collection of common hooks for Svelte" />
+
+	<!-- Twitter -->
+	<meta property="twitter:card" content="summary_large_image" />
+	<meta property="twitter:url" content="https://svelte-common-hooks.fanboykun.com" />
+	<meta property="twitter:title" content="Svelte Common Hooks" />
+	<meta property="twitter:description" content="A collection of common hooks for Svelte" />
 </svelte:head>
 <ModeWatcher defaultMode="dark" />
 <Sidebar.Provider>

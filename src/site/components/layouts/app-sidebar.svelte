@@ -9,8 +9,8 @@
 				url: '/',
 				items: [
 					{
-						title: 'Prerequisites',
-						url: '/prerequisites'
+						title: 'Introduction',
+						url: '/'
 					},
 					{
 						title: 'Installation',
@@ -47,6 +47,10 @@
 					{
 						title: 'Guide',
 						url: '/create-form-state'
+					},
+					{
+						title: 'Example',
+						url: '/create-form-state/example'
 					}
 				]
 			},
