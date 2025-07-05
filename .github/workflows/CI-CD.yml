@@ -52,6 +52,6 @@ jobs:
         run: bun run build:lib
 
       - name: Publish to NPM
-        run: bun run publish --access public
+        run: bun publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
