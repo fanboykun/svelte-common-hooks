@@ -1,5 +1,5 @@
-.github/**
-.vscode/**
+/.github/**
+/.vscode/**
 *.md
 eslint.config.js
 .prettierrc
