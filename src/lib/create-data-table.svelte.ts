@@ -318,7 +318,7 @@ export class DataTable<
 		this.#totalItems = totalItems;
 	};
 
-	private timeout: number | null = null;
+	private timeout: NodeJS.Timeout | null = null;
 	/**
 	 * Set the search query, and delay the process update
 	 */
