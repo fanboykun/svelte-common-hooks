@@ -1,6 +1,7 @@
 {
 	"name": "svelte-common-hooks",
 	"description": "Common hooks for Svelte",
+	"version": "0.0.1",
 	"author": {
 		"name": "fanboykun",
 		"url": "https://github.com/fanboykun",
@@ -10,11 +11,12 @@
 		"provenance": true,
 		"access": "public"
 	},
-	"version": "0.0.2",
 	"repository": {
-		"url": "https://github.com/fanboykun/svelte-common-hooks"
+		"type": "git",
+		"url": "https://github.com/fanboykun/svelte-common-hooks.git"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.29.5",
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@internationalized/date": "^3.8.1",
@@ -25,6 +27,7 @@
 		"@sveltejs/adapter-vercel": "^5.7.2",
 		"@sveltejs/package": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@svitejs/changesets-changelog-github-compact": "^1.2.0",
 		"@tailwindcss/vite": "^4.0.0",
 		"bits-ui": "^2.8.6",
 		"clsx": "^2.1.1",
@@ -93,7 +96,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check src/lib/* && eslint src/lib/*"
+		"lint": "prettier --check src/lib/* && eslint src/lib/*",
+		"release": "bun run build && bun run prepack && changeset publish"
 	},
 	"sideEffects": [
 		"**/*.css"
