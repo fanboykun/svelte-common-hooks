@@ -20,8 +20,7 @@ on:
 jobs:
   Publish:
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    # if: github.actor == 'fanboykun'
+    if: github.actor == 'fanboykun' && github.repository == 'fanboykun/svelte-common-hooks'
     permissions:
       contents: write
       issues: write
