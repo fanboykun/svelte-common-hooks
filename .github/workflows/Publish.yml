@@ -1,4 +1,4 @@
-name: Release
+name: Publish
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
       - 'svelte.config.js'
       - 'vite.config.js'
       - 'README.md'
-      - '.github/workflows/Release.yml'
+      - '.github/workflows/Publish.yml'
 
   # release:
   #   types: [created]
