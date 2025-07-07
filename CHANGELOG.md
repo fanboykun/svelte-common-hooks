@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.3
+
+### Patch Changes
+
+- bump version ([`1e06383`](https://github.com/fanboykun/svelte-common-hooks/commit/1e063838260b16863b6c9340d6591e78c364de17))
+
 ## 0.0.2
 
 ### Patch Changes
