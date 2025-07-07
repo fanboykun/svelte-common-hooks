@@ -52,6 +52,8 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup npm authentication
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: echo "//registry.npmjs.org/:_authToken=\${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
       - name: Setup Bun

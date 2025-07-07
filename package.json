@@ -84,6 +84,7 @@
 		"dev": "vite dev",
 		"build:lib": "vite build",
 		"build:site": "vite build",
+		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"prepack": "svelte-kit sync && svelte-package && publint",
