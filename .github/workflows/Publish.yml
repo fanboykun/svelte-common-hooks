@@ -60,7 +60,8 @@ jobs:
         with:
           commit: 'chore(release): version package'
           title: 'chore(release): version package'
-          publish: bun run release
+          version: 'bun run version'
+          publish: 'bun run release'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
