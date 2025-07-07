@@ -18,27 +18,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  CI:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Svelte Check
-        run: bun run check
-
-      - name: Lint
-        run: bun run lint
-
   Publish:
     runs-on: ubuntu-latest
     # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: CI
     permissions:
       contents: write
       issues: write
@@ -56,9 +38,6 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: echo "//registry.npmjs.org/:_authToken=\${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
       - name: Setup Node.js (for npm publishing)
         uses: actions/setup-node@v4
         with:
@@ -66,13 +45,19 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: bun install
+        run: npm install
+
+      - name: Svelte Check
+        run: npm run check
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
-        run: bun run build:lib
+        run: npm run build
 
       - name: Prepack
-        run: bun run prepack
+        run: npm run prepack
 
       - name: Semantic Release
         env:
