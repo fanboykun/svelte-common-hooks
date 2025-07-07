@@ -1,4 +1,3 @@
-export type PromiseReturnType<T extends () => Promise<unknown>> = Awaited<ReturnType<T>>;
 export type Filter<T, M extends Mode> = Record<
 	string,
 	M extends 'client' ? (item: T, args: any) => boolean : unknown

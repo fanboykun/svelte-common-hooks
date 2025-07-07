@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    branches: ['main']
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Svelte Check
+        run: bun run check
+
+      - name: Lint
+        run: bun run lint
+
+  Publish:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      id-token: write
+    needs: CI
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup npm authentication
+        run: echo "//registry.npmjs.org/:_authToken=\${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run build:lib
+
+      - name: Prepack
+        run: bun run prepack
+
+      - name: Semantic Release
+        run: bunx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
