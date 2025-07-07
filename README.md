@@ -1,6 +1,7 @@
 # svelte-common-hooks
 
 A collection of Svelte custom hooks that I commonly use across projects.
+<a href="https://svelte-common-hooks.vercel.app/">Documentation</a>
 
 ## 🛠️ Required Dependencies
 

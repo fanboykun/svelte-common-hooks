@@ -13,8 +13,8 @@ on:
       - 'README.md'
       - '.github/workflows/Release.yml'
 
-  release:
-    types: [created]
+  # release:
+  #   types: [created]
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,11 @@ jobs:
       - name: Setup npm authentication
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: echo "//registry.npmjs.org/:_authToken=\${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+        run: |
+          echo $NPM_TOKEN
+          cat << EOF > "$HOME/.npmrc"
+            //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          EOF
 
       - name: Setup Node.js (for npm publishing)
         uses: actions/setup-node@v4
