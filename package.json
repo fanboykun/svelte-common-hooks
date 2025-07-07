@@ -97,7 +97,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check src/lib/* && eslint src/lib/*",
-		"version": "bun changeset version --snapshot",
+		"version": "bun changeset version",
 		"release": "bun run build && bun run prepack && changeset publish"
 	},
 	"sideEffects": [
