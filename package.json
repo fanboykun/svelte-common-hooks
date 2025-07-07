@@ -20,6 +20,7 @@
 		"@internationalized/date": "^3.8.1",
 		"@lucide/svelte": "^0.515.0",
 		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/git": "^10.0.1",
 		"@sveltejs/adapter-auto": "^6.0.0",
 		"@sveltejs/adapter-vercel": "^5.7.2",
 		"@sveltejs/package": "^2.0.0",
