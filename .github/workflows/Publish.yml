@@ -54,15 +54,19 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request
         id: changesets
         uses: changesets/action@v1
         with:
           commit: 'chore(release): version package'
           title: 'chore(release): version package'
-          version: 'bun run version'
-          publish: 'bun run release'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: production
+
+      - name: Bump Version
+        run: bun run version
+
+      - name: Publish
+        run: bun run release
