@@ -1,0 +1,7 @@
+.github/**
+.vscode/**
+*.md
+eslint.config.js
+.prettierrc
+.prettierignore
+.releaserc.json
