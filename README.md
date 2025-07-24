@@ -322,7 +322,12 @@ export const GET: RequestHandler = (event) => {
 			// we then finally can updated the data and totalItems returning from the `load` function here
 			dataTable.updateDataAndTotalItems(data.users, data.totalItems);
 		}
-	});
+	}).invalidate(
+		() => data,
+		(instance) => {
+			instance.updateDataAndTotalItems(data.users, data.totalItems);
+		}
+	);
 </script>
 ```
 

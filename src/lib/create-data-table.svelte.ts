@@ -281,6 +281,23 @@ export class DataTable<
 					: this.initial.length;
 		this.#search = config.search ?? '';
 		this.#currentPage = config.page ?? 1;
+		if (config.mode === 'manual' || config.mode === 'server') {
+			const currentFilter = Object.entries(config.filters ?? {});
+			const currentSort = Object.entries(config.sorts ?? {});
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			if (currentFilter.some(([_, v]) => v !== undefined)) {
+				this.#appliableFilter = currentFilter as AppliableFilter<M, F>;
+			}
+			currentSort?.forEach(([key, value]) => {
+				if (this.#appliableSort.current && this.#appliableSort.dir) return;
+				if (key && value) {
+					this.#appliableSort = {
+						current: key,
+						dir: value as 'asc' | 'desc'
+					};
+				}
+			});
+		}
 
 		$effect(() => {
 			if (this.config.mode === 'client' && this.#search) this.#currentPage = 1;
@@ -369,8 +386,12 @@ export class DataTable<
 	/**
 	 * Manual mode processing
 	 */
-	private readonly processUpdate = async () => {
-		if (this.config.mode === 'manual' && 'processWith' in this.config && this.config.processWith)
+	private readonly processUpdate = () => {
+		if (
+			this.config.mode === 'manual' &&
+			'processWith' in this.config &&
+			typeof this.config.processWith === 'function'
+		)
 			this.config.processWith();
 	};
 
@@ -445,6 +466,30 @@ export class DataTable<
 			const next = getters();
 			if (this.hydrated) {
 				this.initial = next;
+			} else {
+				this.hydrated = true;
+			}
+		});
+		return this;
+	}
+
+	/**
+	 * Sometimes you want to invalidate the data on a side effect.
+	 * and you have to wrap the creation inside of `$derived` block.
+	 * or you do the side effect inside of `$effect` block.
+	 * this method provide you just that to avoid that ugliness.
+	 * this method only available on `server` and `manual` mode
+	 * @param dependencies
+	 * @param invalidation
+	 * @returns
+	 */
+	public invalidate(dependencies: () => any, invalidation: (instance: typeof this) => void) {
+		if (this.mode !== 'manual' && this.mode !== 'server') return this;
+		$effect(() => {
+			// i am really sorry for this garbage
+			dependencies();
+			if (this.hydrated) {
+				invalidation(this);
 			} else {
 				this.hydrated = true;
 			}
