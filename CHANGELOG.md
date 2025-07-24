@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.4
+
+### Patch Changes
+
+- update create data table and create form state ([`8dbc73f`](https://github.com/fanboykun/svelte-common-hooks/commit/8dbc73ff41f72e6045e9a84719843c5ef6b61b9e))
+
 ## 0.0.3
 
 ### Patch Changes
