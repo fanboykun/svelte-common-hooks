@@ -311,9 +311,12 @@ export function createFormState<
 	};
 	/**
 	 * Validate the entire form.
+	 *
+	 * @param {ExtendedData} extendedData - The data to validate, if none is provided it will validate the current form state.
+	 * @returns {ParseResult<Initial>} The result of the validation.
 	 */
-	const validateAll = () => {
-		const parseAllResult = props.schema.safeParse(value);
+	const validateAll = <ExtendedData extends Initial>(extendedData?: ExtendedData) => {
+		const parseAllResult = props.schema.safeParse(extendedData ?? value);
 		if (!parseAllResult.success) {
 			parseAllResult.error.issues.forEach((v) => {
 				result[v.path[0] as keyof z.infer<T>].errors = [v.message];
@@ -323,6 +326,25 @@ export function createFormState<
 		}
 		return parseAllResult;
 	};
+
+	const resetError = () => {
+		Object.keys(result).forEach((key) => {
+			result[key as keyof z.infer<T>].errors = [];
+			result[key as keyof z.infer<T>].hasError = false;
+			attribute[key as keyof z.infer<T>]['aria-invalid'] = false;
+		});
+	};
+
+	const setErrors = (newErrors: { [K in keyof typeof value]?: string[] }) => {
+		Object.keys(newErrors).forEach((key) => {
+			const theError = newErrors[key as keyof z.infer<T>];
+			const hasError = theError !== undefined && Array.isArray(theError) && theError.length > 0;
+			result[key as keyof z.infer<T>].errors = theError ?? [];
+			result[key as keyof z.infer<T>].hasError = hasError;
+			attribute[key as keyof z.infer<T>]['aria-invalid'] = hasError;
+		});
+	};
+
 	return {
 		get value() {
 			return value;
@@ -339,6 +361,8 @@ export function createFormState<
 		addErrors,
 		setValue,
 		validate,
-		validateAll
+		validateAll,
+		resetError,
+		setErrors
 	};
 }

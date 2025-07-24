@@ -28,22 +28,38 @@ export const users: User[] = Array.from({ length: 100 }, (_, i) => ({
 	},
 	createdAt: randomDate(i)
 }));
-
+const createUser = () => {
+	return Array.from({ length: 100 }, (_, i) => ({
+		id: crypto.randomUUID() as string,
+		name: `User ${i + 1}`,
+		email: `user${i + 1}@example.com`,
+		age: Math.floor(Math.random() * 50),
+		address: {
+			street: `Street ${i + 1}`,
+			city: `City ${i + 1}`,
+			state: `State ${i + 1}`,
+			zipCode: `ZipCode ${i + 1}`
+		},
+		createdAt: randomDate(i)
+	}));
+};
 export function getAllUser() {
 	return users;
 }
 
-export function getUser(config: UserPaginationConfig) {
-	const result = users.filter((user) => {
-		return (
-			(config?.search ? user.name.toLowerCase().includes(config.search.toLowerCase()) : true) &&
-			(typeof config?.isAdult === 'undefined' || config?.isAdult === null
-				? true
-				: config.isAdult
-					? user.age >= 18
-					: user.age < 18)
-		);
-	});
+export function getUser(config: UserPaginationConfig, randomizeData?: boolean) {
+	const result = randomizeData
+		? createUser()
+		: users.filter((user) => {
+				return (
+					(config?.search ? user.name.toLowerCase().includes(config.search.toLowerCase()) : true) &&
+					(typeof config?.isAdult === 'undefined' || config?.isAdult === null
+						? true
+						: config.isAdult
+							? user.age >= 18
+							: user.age < 18)
+				);
+			});
 	const totalItems = result.length;
 	const paginated = result
 		.sort((a, b) => {

@@ -3,10 +3,11 @@
 	import * as Table from '@/components/ui/table/index.js';
 	import TableHelper from '../(components)/table-helper.svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import * as Select from '@/components/ui/select/index.js';
 	import { isNullish, stringToBoolean, stringToEnum, stringToNumber } from '../(utils)/utils.js';
 	import { setPaginationConfig } from '../(schema)/pagination-schema.js';
+	import Button from '@/components/ui/button/button.svelte';
 	let { data } = $props();
 
 	/**
@@ -63,7 +64,11 @@
 		 * It is helping us by providing strong typing to do `sortBy` later
 		 */
 		sorts: {
-			createdAt: stringToEnum(page.url.searchParams.get('sort'), ['asc', 'desc'] as const, 'desc')
+			createdAt: stringToEnum(
+				page.url.searchParams.get('sort'),
+				['asc', 'desc'] as const,
+				undefined
+			)
 		},
 		/**
 		 * In `manual` mode, we get our data with `processWith` function.
@@ -93,11 +98,17 @@
 			});
 
 			// we then finally can updated the data and totalItems returning from the `load` function here
-			dataTable.updateDataAndTotalItems(data.users, data.totalItems);
+			// dataTable.updateDataAndTotalItems(data.users, data.totalItems);
 		}
-	});
+	}).invalidate(
+		() => data,
+		(instance) => {
+			instance.updateDataAndTotalItems(data.users, data.totalItems);
+		}
+	);
 </script>
 
+<Button onclick={() => invalidateAll()}>Invalidate Page</Button>
 <TableHelper
 	title="Manual DataTable Example"
 	description="Example of using DataTable with manual mode, every thing is done manually by you. this is great if you want to do it with `goto` from sveltekit"
