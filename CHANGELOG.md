@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.6
+
+### Patch Changes
+
+- add processing state on manual and server mode ([`a6e3c49`](https://github.com/fanboykun/svelte-common-hooks/commit/a6e3c49c3be83ddd6d46e28d22ba819828863915))
+
 ## 0.0.5
 
 ### Patch Changes
