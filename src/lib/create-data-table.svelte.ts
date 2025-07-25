@@ -257,6 +257,11 @@ export class DataTable<
 	 */
 	#search = $state<string>('');
 
+	/**
+	 * Processing State, only available on `server` and `manual` mode
+	 */
+	#processing = $state(false);
+
 	constructor(config: Config<M, T, F, S>) {
 		if (config.mode === 'server' && 'queryFn' in config && config.queryFn) {
 			this.queryFn = config.queryFn;
@@ -393,8 +398,10 @@ export class DataTable<
 			this.config.mode === 'manual' &&
 			'processWith' in this.config &&
 			typeof this.config.processWith === 'function'
-		)
-			this.config.processWith();
+		) {
+			this.#processing = true;
+			this.config.processWith?.()?.then(() => (this.#processing = false));
+		}
 	};
 
 	/**
@@ -749,5 +756,12 @@ export class DataTable<
 	 */
 	get mode() {
 		return this.config.mode;
+	}
+	/**
+	 * @readonly processing
+	 * get the processing state
+	 */
+	get processing() {
+		return this.#processing;
 	}
 }

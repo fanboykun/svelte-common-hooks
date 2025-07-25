@@ -100,7 +100,7 @@
 			// we then finally can updated the data and totalItems returning from the `load` function here
 			// dataTable.updateDataAndTotalItems(data.users, data.totalItems);
 		}
-	}).invalidate(
+	}).effect(
 		() => data,
 		(instance) => {
 			instance.updateDataAndTotalItems(data.users, data.totalItems);
