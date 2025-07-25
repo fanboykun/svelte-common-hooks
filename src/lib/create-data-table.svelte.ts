@@ -16,7 +16,9 @@ type AppliableFilter<M extends Mode, F extends Filter<any, M>> = {
 
 export type Sorting<T, M extends Mode> = Record<
 	string,
-	M extends 'client' ? (a: T, b: T, currentDir: 'asc' | 'desc') => number : 'asc' | 'desc'
+	M extends 'client'
+		? (a: T, b: T, currentDir: 'asc' | 'desc' | undefined) => number
+		: 'asc' | 'desc' | undefined
 >;
 
 type AppliableSort<M extends Mode, S extends Sorting<any, M>> = {
@@ -293,7 +295,7 @@ export class DataTable<
 				if (key && value) {
 					this.#appliableSort = {
 						current: key,
-						dir: value as 'asc' | 'desc'
+						dir: value as 'asc' | 'desc' | undefined
 					};
 				}
 			});
@@ -370,7 +372,7 @@ export class DataTable<
 						if (!this.config.sorts || !this.#appliableSort.current || this.config.mode !== 'client')
 							return 0;
 						const sortFn = this.config?.sorts?.[this.#appliableSort.current];
-						if (typeof sortFn === 'function') return sortFn(a, b, this.#appliableSort.dir ?? 'asc');
+						if (typeof sortFn === 'function') return sortFn(a, b, this.#appliableSort.dir);
 						return 0;
 					})
 			: [];
@@ -432,6 +434,7 @@ export class DataTable<
 	};
 
 	/**
+	 * @deprecated use `effect` instead
 	 * hydrate state on page invalidation
 	 * only for client mode
 	 * @param getters the state getters
@@ -474,6 +477,7 @@ export class DataTable<
 	}
 
 	/**
+	 * @deprecated use `effect` instead
 	 * Sometimes you want to invalidate the data on a side effect.
 	 * and you have to wrap the creation inside of `$derived` block.
 	 * or you do the side effect inside of `$effect` block.
@@ -493,6 +497,36 @@ export class DataTable<
 			} else {
 				this.hydrated = true;
 			}
+		});
+		return this;
+	}
+
+	/**
+	 * Sometimes you want to invalidate the data on a side effect.
+	 * and you have to wrap the creation inside of `$derived` block.
+	 * or you do the side effect inside of `$effect` block.
+	 * this method provide you just that to avoid that ugliness.
+	 * this method only available on `server` and `manual` mode
+	 * @param dependencies
+	 * @param invalidation
+	 * @returns
+	 */
+	public effect<T>(
+		dependencies: () => T,
+		invalidation: (instance: typeof this, deps: T) => (() => any) | void
+	) {
+		$effect(() => {
+			// i am really sorry for this garbage
+			const deps = dependencies();
+			let cleanup: (() => any) | void;
+			if (this.hydrated) {
+				cleanup = invalidation(this, deps);
+			} else {
+				this.hydrated = true;
+			}
+			return () => {
+				if (typeof cleanup === 'function') return cleanup();
+			};
 		});
 		return this;
 	}
