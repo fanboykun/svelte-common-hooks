@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.5
+
+### Patch Changes
+
+- add nicer side effect method ([`099e479`](https://github.com/fanboykun/svelte-common-hooks/commit/099e47992395622a70154b270cf301463497840c))
+
 ## 0.0.4
 
 ### Patch Changes
