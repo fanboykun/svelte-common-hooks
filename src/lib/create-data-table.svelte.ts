@@ -294,14 +294,15 @@ export class DataTable<
 			currentFilter?.forEach(([k, v]) => {
 				if (typeof config.filters?.[k] === 'function') return;
 				if (v === undefined || v === null) return;
-				const snap = $state.snapshot(this.#appliableFilter) as AppliableFilter<M, F>;
+				const snap = $state.snapshot(this.#pendingFilter) as AppliableFilter<M, F>;
 				if (v !== undefined || v !== null) {
-					this.#appliableFilter = {
+					this.#pendingFilter = {
 						...snap,
 						[k]: v
 					};
 				}
 			});
+			this.#appliableFilter = this.#pendingFilter;
 
 			// apply initial sorts
 			const currentSort = Object.entries(config.sorts ?? {});
@@ -335,16 +336,15 @@ export class DataTable<
 		});
 	}
 
-	public readonly getFilterValue = <DefaultValue = any>(
-		key: keyof F,
-		by: 'pending' | 'applied' | 'both' = 'both',
-		defaultValue?: DefaultValue
+	public readonly getFilterValue = <K extends keyof F, DefaultValue = any>(
+		key: K,
+		args: { by?: 'pending' | 'applied' | 'both'; defaultValue?: DefaultValue }
 	) => {
-		return by === 'pending'
-			? (this.#pendingFilter[key] ?? defaultValue)
-			: by === 'applied'
-				? (this.#appliableFilter[key] ?? defaultValue)
-				: (this.#pendingFilter[key] ?? this.#appliableFilter[key] ?? defaultValue);
+		return args.by === 'pending'
+			? (this.#pendingFilter[key] ?? args.defaultValue)
+			: args.by === 'applied'
+				? (this.#appliableFilter[key] ?? args.defaultValue)
+				: (this.#pendingFilter[key] ?? this.#appliableFilter[key] ?? args.defaultValue);
 	};
 
 	/**
