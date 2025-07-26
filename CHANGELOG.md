@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.9
+
+### Patch Changes
+
+- fix immediatelly appliying pending filter ([`9b77fcf`](https://github.com/fanboykun/svelte-common-hooks/commit/9b77fcf5f291b0ccbda075bf5f0fd948ac669ed7))
+
 ## 0.0.8
 
 ### Patch Changes
