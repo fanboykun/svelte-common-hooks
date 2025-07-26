@@ -279,23 +279,34 @@ export class DataTable<
 			this.config.initial = [];
 		}
 
-		this.#perPage = config.perPage ?? 10;
+		this.#perPage = config.perPage ?? 10; // apply initial per page
 		this.#totalItems =
 			config.mode === 'client'
 				? this.initial.length
 				: 'totalItems' in config && config.totalItems
 					? config.totalItems
-					: this.initial.length;
-		this.#search = config.search ?? '';
-		this.#currentPage = config.page ?? 1;
+					: this.initial.length; // apply initial totalItems
+		this.#search = config.search ?? ''; // apply initial search
+		this.#currentPage = config.page ?? 1; // apply initial page
 		if (config.mode === 'manual' || config.mode === 'server') {
+			// apply initial filter
 			const currentFilter = Object.entries(config.filters ?? {});
+			currentFilter?.forEach(([k, v]) => {
+				if (typeof config.filters?.[k] === 'function') return;
+				if (v === undefined || v === null) return;
+				const snap = $state.snapshot(this.#appliableFilter) as AppliableFilter<M, F>;
+				if (v !== undefined || v !== null) {
+					this.#appliableFilter = {
+						...snap,
+						[k]: v
+					};
+				}
+			});
+
+			// apply initial sorts
 			const currentSort = Object.entries(config.sorts ?? {});
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			if (currentFilter.some(([_, v]) => v !== undefined)) {
-				this.#appliableFilter = currentFilter as AppliableFilter<M, F>;
-			}
 			currentSort?.forEach(([key, value]) => {
+				if (typeof config.sorts?.[key] === 'function') return;
 				if (this.#appliableSort.current && this.#appliableSort.dir) return;
 				if (key && value) {
 					this.#appliableSort = {
@@ -306,8 +317,9 @@ export class DataTable<
 			});
 		}
 
+		// reset the current page when search is not empty on client mode
 		$effect(() => {
-			if (this.config.mode === 'client' && this.#search) this.#currentPage = 1;
+			if (this.mode === 'client' && this.#search) this.#currentPage = 1;
 		});
 		/**
 		 * As soon as the component is mounted, we fetch the data from the server if the mode is server
@@ -322,6 +334,19 @@ export class DataTable<
 			}
 		});
 	}
+
+	public readonly getFilterValue = <DefaultValue = any>(
+		key: keyof F,
+		by: 'pending' | 'applied' | 'both' = 'both',
+		defaultValue?: DefaultValue
+	) => {
+		return by === 'pending'
+			? (this.#pendingFilter[key] ?? defaultValue)
+			: by === 'applied'
+				? (this.#appliableFilter[key] ?? defaultValue)
+				: (this.#pendingFilter[key] ?? this.#appliableFilter[key] ?? defaultValue);
+	};
+
 	/**
 	 * Whether any interaction happened
 	 */
@@ -359,7 +384,7 @@ export class DataTable<
 	 * Client side data processing
 	 */
 	private process(value: T[]) {
-		if (this.config.mode !== 'client') return { result: value, totalItems: value.length };
+		if (this.mode !== 'client') return { result: value, totalItems: value.length };
 		const result = value?.length
 			? value
 					.filter(
@@ -374,7 +399,7 @@ export class DataTable<
 							)
 					)
 					.sort((a, b) => {
-						if (!this.config.sorts || !this.#appliableSort.current || this.config.mode !== 'client')
+						if (!this.config.sorts || !this.#appliableSort.current || this.mode !== 'client')
 							return 0;
 						const sortFn = this.config?.sorts?.[this.#appliableSort.current];
 						if (typeof sortFn === 'function') return sortFn(a, b, this.#appliableSort.dir);
@@ -395,7 +420,7 @@ export class DataTable<
 	 */
 	private readonly processUpdate = () => {
 		if (
-			this.config.mode === 'manual' &&
+			this.mode === 'manual' &&
 			'processWith' in this.config &&
 			typeof this.config.processWith === 'function'
 		) {
@@ -470,7 +495,7 @@ export class DataTable<
 	 * ```
 	 */
 	public hydrate(getters: () => T[]) {
-		if (this.config.mode !== 'client') return this;
+		if (this.mode !== 'client') return this;
 		$effect(() => {
 			// i am really sorry for this garbage
 			const next = getters();
@@ -494,7 +519,7 @@ export class DataTable<
 	 * @param invalidation
 	 * @returns
 	 */
-	public invalidate(dependencies: () => any, invalidation: (instance: typeof this) => void) {
+	public invalidate(dependencies: () => any, invalidation: (instance: this) => void) {
 		if (this.mode !== 'manual' && this.mode !== 'server') return this;
 		$effect(() => {
 			// i am really sorry for this garbage

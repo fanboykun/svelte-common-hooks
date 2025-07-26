@@ -151,3 +151,38 @@ export function createModalState<T extends string>(...modal_names: T[]) {
 		// closeStrict
 	};
 }
+
+/**
+ * Creates a simple modal state manager
+ *
+ * @param keys The keys of the modal
+ * @returns The modal state manager
+ */
+export const createSimpleModal = <T extends string[]>(...keys: T) => {
+	const list = $state<Record<T[number], boolean>>(
+		keys.reduce(
+			(acc, v) => {
+				acc[v as T[number]] = false;
+				return acc;
+			},
+			{} as Record<T[number], boolean>
+		)
+	);
+	const open = (name: T[number], callbacks?: { before?: () => void; after?: () => void }) => {
+		callbacks?.before?.();
+		list[name] = true;
+		callbacks?.after?.();
+	};
+	const close = (name: T[number], callbacks?: { before?: () => void; after?: () => void }) => {
+		callbacks?.before?.();
+		list[name] = false;
+		callbacks?.after?.();
+	};
+	return {
+		get list() {
+			return list;
+		},
+		open,
+		close
+	};
+};
