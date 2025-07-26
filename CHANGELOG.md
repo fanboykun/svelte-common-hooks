@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.7
+
+### Patch Changes
+
+- fix applied filter values ([`cd86f40`](https://github.com/fanboykun/svelte-common-hooks/commit/cd86f404e98107ee8f3b106086486d8689d6f328))
+
 ## 0.0.6
 
 ### Patch Changes
