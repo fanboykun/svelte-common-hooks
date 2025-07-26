@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.8
+
+### Patch Changes
+
+- apply default or exisiting filter to pending filter ([`e99df19`](https://github.com/fanboykun/svelte-common-hooks/commit/e99df19a92a614361fff06dc73aab62ce63765a5))
+
 ## 0.0.7
 
 ### Patch Changes
