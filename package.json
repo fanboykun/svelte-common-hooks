@@ -1,7 +1,7 @@
 {
 	"name": "svelte-common-hooks",
 	"description": "Common hooks for Svelte",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"author": {
 		"name": "fanboykun",
 		"url": "https://github.com/fanboykun",
