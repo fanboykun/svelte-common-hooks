@@ -569,18 +569,20 @@ export class DataTable<
 	public readonly filterBy = <K extends keyof F>(
 		key: K,
 		args: FilterArg<F[K], M>,
-		config: { immediate?: boolean; resetPage?: boolean; resetSearch?: boolean } = {
+		config?: { immediate?: boolean; resetPage?: boolean; resetSearch?: boolean }
+	) => {
+		config = {
 			immediate: false,
 			resetPage: false,
-			resetSearch: false
-		}
-	) => {
+			resetSearch: false,
+			...config
+		};
 		if (typeof this.config.filters === 'undefined') return;
-		if (config.immediate) this.#appliableFilter[key] = args;
-		else this.#pendingFilter[key] = args;
-		if (config.resetPage) this.#currentPage = 1;
-		if (config.resetSearch) this.#search = '';
-		this.processUpdate();
+		this.#pendingFilter[key] = args;
+		if (config.immediate === true) this.#appliableFilter[key] = args;
+		if (config.resetPage === true) this.#currentPage = 1;
+		if (config.resetSearch === true) this.#search = '';
+		if (config.immediate === true) this.processUpdate();
 	};
 
 	/**
@@ -589,8 +591,10 @@ export class DataTable<
 	 */
 	public readonly removeFilter = <K extends keyof F>(key: K, immediate = false) => {
 		delete this.#pendingFilter[key];
-		if (immediate) delete this.#appliableFilter[key];
-		this.processUpdate();
+		if (immediate === true) {
+			delete this.#appliableFilter[key];
+			this.processUpdate();
+		}
 	};
 
 	/**
