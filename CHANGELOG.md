@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.11
+
+### Patch Changes
+
+- fix hasInteracted bug ([`331f86d`](https://github.com/fanboykun/svelte-common-hooks/commit/331f86d430b8b0b5cbe8e13203465bf9ac41741a))
+
 ## 0.0.10
 
 ### Patch Changes
