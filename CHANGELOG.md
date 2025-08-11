@@ -1,5 +1,11 @@
 # svelte-common-hooks
 
+## 0.0.10
+
+### Patch Changes
+
+- add more side effect on hasInteracted ([`adde0af`](https://github.com/fanboykun/svelte-common-hooks/commit/adde0af324c43aefe5b809c06a6e93f26566b418))
+
 ## 0.0.9
 
 ### Patch Changes
