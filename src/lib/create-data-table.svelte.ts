@@ -354,6 +354,8 @@ export class DataTable<
 		if (this.#search) return true;
 		if (this.#appliableSort.current) return true;
 		if (Object.keys(this.#appliableFilter ?? {}).length) return true;
+		if (this.#currentPage !== 1) return true;
+		if (this.perPage !== this.config.perPage) return true;
 		return false;
 	});
 
