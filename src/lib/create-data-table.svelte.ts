@@ -355,7 +355,7 @@ export class DataTable<
 		if (this.#appliableSort.current) return true;
 		if (Object.keys(this.#appliableFilter ?? {}).length) return true;
 		if (this.#currentPage !== 1) return true;
-		if (this.perPage !== this.config.perPage) return true;
+		if (this.perPage !== (this.config.perPage ?? 10)) return true;
 		return false;
 	});
 
